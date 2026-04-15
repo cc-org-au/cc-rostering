@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { supabase } from '../lib/supabase';
 
 const DAYS_SHORT  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -81,6 +82,35 @@ function monthBudgetSlice(p,y,m) {
   return tw>0?Math.round(parseFloat(p.budget)*wdInMonth(y,m)/tw):null;
 }
 
+// ── DB ↔ app mapping ─────────────────────────────────────────────────────────
+const projToRow = p => ({
+  id: p.id, name: p.name, client: p.client, color: p.color, notes: p.notes,
+  budget: p.budget, charge_out_rate: p.chargeOutRate, total_input: p.totalInput,
+  total_unit: p.totalUnit, staff_mode: p.staffMode, fixed_staff: p.fixedStaff,
+  start_month: p.startMonth, start_year: p.startYear, end_month: p.endMonth,
+  end_year: p.endYear, monthly_hours: p.monthlyHours, strengths_required: p.strengthsRequired||[],
+});
+const rowToProj = r => ({
+  id: r.id, name: r.name, client: r.client||'', color: r.color||PROJ_COLORS[0],
+  notes: r.notes||'', budget: r.budget||'', chargeOutRate: r.charge_out_rate||'',
+  totalInput: r.total_input||'', totalUnit: r.total_unit||'days',
+  staffMode: r.staff_mode||'flexible', fixedStaff: r.fixed_staff||'',
+  startMonth: r.start_month||String(NOW.getMonth()), startYear: r.start_year||String(NOW.getFullYear()),
+  endMonth: r.end_month||String(NOW.getMonth()), endYear: r.end_year||String(NOW.getFullYear()),
+  monthlyHours: r.monthly_hours||{}, strengthsRequired: r.strengths_required||[],
+});
+const empToRow = e => ({
+  id: e.id, name: e.name, role: e.role, type: e.type, rate: e.rate,
+  phone: e.phone, email: e.email, notes: e.notes, availability: e.availability,
+  max_hours_per_month: e.maxHoursPerMonth, strengths: e.strengths||[],
+});
+const rowToEmp = r => ({
+  id: r.id, name: r.name, role: r.role||ROLES[3], type: r.type||EMP_TYPES[0],
+  rate: r.rate||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'',
+  availability: r.availability||{Mon:true,Tue:true,Wed:true,Thu:true,Fri:true,Sat:false,Sun:false},
+  maxHoursPerMonth: r.max_hours_per_month||160, strengths: r.strengths||[],
+});
+
 // ── stable primitives (outside App) ──────────────────────────────────────────
 const cardSt  = (x={}) => ({background:"#fff",border:"1.5px solid #e5e7eb",borderRadius:12,padding:"16px 18px",marginBottom:10,...x});
 const inpSt   = (x={}) => ({width:"100%",boxSizing:"border-box",padding:"10px 12px",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"#fff",color:"#111827",outline:"none",...x});
@@ -158,8 +188,27 @@ export default function App() {
   const [empMod,setEmpMod]   = useState(null);
   const [pTick,setPTick]     = useState(0);
   const [eTick,setETick]     = useState(0);
+  const [loading,setLoading] = useState(true);
   const pRef = useRef(null);
   const eRef = useRef(null);
+
+  useEffect(()=>{
+    (async()=>{
+      const [{data:pd},{data:ed},{data:ad}] = await Promise.all([
+        supabase.from('projects').select('*'),
+        supabase.from('employees').select('*'),
+        supabase.from('assignments').select('*'),
+      ]);
+      if(pd) setProj(pd.map(rowToProj));
+      if(ed) setEmps(ed.map(rowToEmp));
+      if(ad){
+        const a={};
+        ad.forEach(r=>{a[`${r.year}-${r.month}-${r.day}-${r.employee_id}`]=r.project_id;});
+        setAssigns(a);
+      }
+      setLoading(false);
+    })();
+  },[]);
 
   const mkProj = useCallback(()=>({
     id:"", name:"", client:"", color:PROJ_COLORS[0], notes:"",
@@ -186,18 +235,24 @@ export default function App() {
     const s={...p,id:p.id||uid()};
     setProj(prev=>p.id?prev.map(x=>x.id===s.id?s:x):[...prev,s]);
     setProjMod(null); pRef.current=null;
+    supabase.from('projects').upsert(projToRow(s)).then();
   }
   function saveEmp() {
     const e=eRef.current; if(!e||!e.name.trim()) return;
     const s={...e,id:e.id||uid()};
     setEmps(prev=>e.id?prev.map(x=>x.id===s.id?s:x):[...prev,s]);
     setEmpMod(null); eRef.current=null;
+    supabase.from('employees').upsert(empToRow(s)).then();
   }
 
   // assignments
   const aKey=(y,m,d,eId)=>`${y}-${m}-${d}-${eId}`;
   const getA=(y,m,d,eId)=>assigns[aKey(y,m,d,eId)];
-  function setA(y,m,d,eId,pid) { setAssigns(prev=>{const n={...prev};if(pid===null)delete n[aKey(y,m,d,eId)];else n[aKey(y,m,d,eId)]=pid;return n;}); }
+  function setA(y,m,d,eId,pid) {
+    setAssigns(prev=>{const n={...prev};if(pid===null)delete n[aKey(y,m,d,eId)];else n[aKey(y,m,d,eId)]=pid;return n;});
+    if(pid===null) supabase.from('assignments').delete().match({year:y,month:m,day:d,employee_id:eId}).then();
+    else supabase.from('assignments').upsert({year:y,month:m,day:d,employee_id:eId,project_id:pid}).then();
+  }
 
   const calDays=useMemo(()=>Array.from({length:daysInMo(rYear,rMonth)},(_,i)=>i+1),[rYear,rMonth]);
   const assignedOnDay=(y,m,d)=>employees.filter(e=>getA(y,m,d,e.id));
@@ -213,6 +268,7 @@ export default function App() {
   function clearMonth() {
     const pre=`${rYear}-${rMonth}-`;
     setAssigns(p=>{const n={...p};Object.keys(n).forEach(k=>{if(k.startsWith(pre))delete n[k];});return n;});
+    supabase.from('assignments').delete().eq('year',rYear).eq('month',rMonth).then();
   }
 
   function autoGenerate() {
@@ -238,6 +294,12 @@ export default function App() {
       });
     });
     setAssigns(newA);
+    // Sync to DB: clear month then batch-insert new assignments
+    const rows=Object.entries(newA)
+      .filter(([k])=>k.startsWith(`${rYear}-${rMonth}-`))
+      .map(([k,pid])=>{const[y,m,d,eId]=k.split('-');return{year:+y,month:+m,day:+d,employee_id:eId,project_id:pid};});
+    supabase.from('assignments').delete().eq('year',rYear).eq('month',rMonth)
+      .then(()=>rows.length&&supabase.from('assignments').insert(rows).then());
   }
 
   const MonthSel=({val,set})=><select value={val} onChange={e=>set(+e.target.value)} style={selSt({width:"auto"})}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>;
@@ -666,7 +728,7 @@ export default function App() {
                 </div>
                 <div style={{display:"flex",gap:6,flexShrink:0}}>
                   <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
-                  <BtnDanger onClick={()=>setProj(prev=>prev.filter(x=>x.id!==p.id))}>Delete</BtnDanger>
+                  <BtnDanger onClick={()=>{setProj(prev=>prev.filter(x=>x.id!==p.id));supabase.from('projects').delete().eq('id',p.id).then();}}>Delete</BtnDanger>
                 </div>
               </div>
             </div>
@@ -707,7 +769,7 @@ export default function App() {
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0}}>
                 <Btn onClick={()=>openEmpMod(e)}>Edit</Btn>
-                <BtnDanger onClick={()=>setEmps(prev=>prev.filter(x=>x.id!==e.id))}>Delete</BtnDanger>
+                <BtnDanger onClick={()=>{setEmps(prev=>prev.filter(x=>x.id!==e.id));supabase.from('employees').delete().eq('id',e.id).then();}}>Delete</BtnDanger>
               </div>
             </div>
           </div>
@@ -900,6 +962,11 @@ export default function App() {
   }
 
   // ── RENDER ───────────────────────────────────────────────────────────────────
+  if(loading) return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontFamily:"system-ui",fontSize:14,color:"#6b7280"}}>
+      Loading…
+    </div>
+  );
   return (
     <div style={{fontFamily:"system-ui,-apple-system,sans-serif",padding:"1rem",maxWidth:1100,margin:"0 auto",color:"#111827"}}>
       <h2 style={{fontSize:24,fontWeight:700,margin:"0 0 4px",color:"#111827"}}>Roster manager</h2>
