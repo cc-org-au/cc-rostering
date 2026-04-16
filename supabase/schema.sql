@@ -19,6 +19,7 @@ create table if not exists projects (
   end_year            text not null default '',
   monthly_hours       jsonb not null default '{}',
   strengths_required  text[] not null default '{}',
+  is_completed        boolean not null default false,
   created_at          timestamptz not null default now()
 );
 

@@ -89,6 +89,7 @@ const projToRow = p => ({
   total_unit: p.totalUnit, staff_mode: p.staffMode, fixed_staff: p.fixedStaff,
   start_month: p.startMonth, start_year: p.startYear, end_month: p.endMonth,
   end_year: p.endYear, monthly_hours: p.monthlyHours, strengths_required: p.strengthsRequired||[],
+  is_completed: p.isCompleted||false,
 });
 const rowToProj = r => ({
   id: r.id, name: r.name, client: r.client||'', color: r.color||PROJ_COLORS[0],
@@ -97,7 +98,7 @@ const rowToProj = r => ({
   staffMode: r.staff_mode||'flexible', fixedStaff: r.fixed_staff||'',
   startMonth: r.start_month||String(NOW.getMonth()), startYear: r.start_year||String(NOW.getFullYear()),
   endMonth: r.end_month||String(NOW.getMonth()), endYear: r.end_year||String(NOW.getFullYear()),
-  monthlyHours: r.monthly_hours||{}, strengthsRequired: r.strengths_required||[],
+  monthlyHours: r.monthly_hours||{}, strengthsRequired: r.strengths_required||[], isCompleted: r.is_completed||false,
 });
 const empToRow = e => ({
   id: e.id, name: e.name, role: e.role, type: e.type, rate: e.rate,
@@ -221,7 +222,7 @@ export default function App() {
     staffMode:"flexible", fixedStaff:"",
     startMonth:String(NOW.getMonth()), startYear:String(NOW.getFullYear()),
     endMonth:String(NOW.getMonth()),   endYear:String(NOW.getFullYear()),
-    monthlyHours:{},
+    monthlyHours:{}, isCompleted:false,
   }),[]);
 
   const mkEmp = useCallback(()=>({
@@ -358,6 +359,7 @@ export default function App() {
     const [ey,setEy]         = useState(p.endYear);
     const [hours,setHours]   = useState({...p.monthlyHours});
     const [notes,setNotes]   = useState(p.notes);
+    const [isCompleted,setIsCompleted] = useState(p.isCompleted||false);
     const [,rerender]        = useState(0);
     const sync=patch=>Object.assign(pRef.current,patch);
     const localMonths=getProjectMonths({startMonth:sm,startYear:sy,endMonth:em,endYear:ey});
@@ -493,6 +495,13 @@ export default function App() {
               </div>
             }
             <div><Lbl>Notes</Lbl><FocusTxt value={notes} placeholder="Any additional notes..." onChange={e=>{setNotes(e.target.value);sync({notes:e.target.value});}}/></div>
+            <div style={{paddingTop:12,borderTop:"1.5px solid #e5e7eb"}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13}}>
+                <input type="checkbox" checked={isCompleted} onChange={e=>{setIsCompleted(e.target.checked);sync({isCompleted:e.target.checked});}} style={{width:18,height:18,cursor:"pointer"}}/>
+                <span style={{color:isCompleted?"#059669":"#6b7280",fontWeight:500}}>Mark project as completed</span>
+              </label>
+              {isCompleted&&<p style={{fontSize:11,color:"#059669",margin:"6px 0 0 26px"}}>✓ This project will not appear in active scheduling.</p>}
+            </div>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20,paddingTop:16,borderTop:"1px solid #e5e7eb"}}>
             <Btn onClick={close}>Cancel</Btn>
@@ -640,12 +649,15 @@ export default function App() {
                   <Avatar name={e.name}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:14,fontWeight:500,color:"#111827"}}>{e.name}</div>
-                    <div style={{fontSize:12,color:"#6b7280"}}>{e.role}{e.strengths?.length?` · ${e.strengths.slice(0,3).join(", ")}${e.strengths.length>3?` +${e.strengths.length-3}`:""}`:""}</div>
+                    <div style={{fontSize:12,color:"#6b7280"}}>
+                      {e.role}
+                      {e.rate&&<span style={{marginLeft:8,color:"#6b7280"}}>· ${e.rate}/hr</span>}
+                      {e.strengths?.length?` · ${e.strengths.slice(0,3).join(", ")}${e.strengths.length>3?` +${e.strengths.length-3}`:""}`:""}
+                    </div>
                   </div>
                   <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end"}}>
                     {projects.map(p=>{
                       const sm=skillMatch(e,p);
-                      // skill badge colour: green = full match, amber = partial, red = none
                       const badgeCol=sm?(sm.n===sm.total?"#059669":sm.n>0?"#d97706":"#dc2626"):null;
                       return (
                         <div key={p.id} style={{display:"flex",gap:0}}>
@@ -673,7 +685,7 @@ export default function App() {
             <div style={{marginTop:16}}>
               <SecTitle>Unavailable today ({unavail.length})</SecTitle>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {unavail.map(e=><span key={e.id} style={{fontSize:12,padding:"3px 10px",borderRadius:99,background:"#f3f4f6",color:"#9ca3af",border:"1px solid #e5e7eb"}}>{e.name}</span>)}
+                {unavail.map(e=><span key={e.id} style={{fontSize:12,padding:"4px 10px",borderRadius:99,background:"#fee2e2",color:"#991b1b",border:"1px solid #fecaca",fontWeight:500}}>⊘ {e.name}</span>)}
               </div>
             </div>
           )}
@@ -684,14 +696,17 @@ export default function App() {
 
   // ── PROJECTS TAB ─────────────────────────────────────────────────────────────
   function ProjectsTab() {
+    const active=projects.filter(p=>!p.isCompleted);
+    const completed=projects.filter(p=>p.isCompleted);
     return (
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <h3 style={{margin:0,fontSize:16,fontWeight:600,color:"#111827"}}>Projects <span style={{fontWeight:400,color:"#6b7280"}}>({projects.length})</span></h3>
+          <h3 style={{margin:0,fontSize:16,fontWeight:600,color:"#111827"}}>Projects <span style={{fontWeight:400,color:"#6b7280"}}>({active.length}{completed.length>0?`+${completed.length} completed`:""})</span></h3>
           <BtnPri onClick={()=>openProjMod(null)}>+ Add project</BtnPri>
         </div>
         {projects.length===0&&<Empty icon="🌿" title="No projects yet" sub='Click "Add project" to get started'/>}
-        {projects.map(p=>{
+        {active.length===0&&completed.length>0&&<p style={{fontSize:13,color:"#9ca3af",marginBottom:16}}>All projects completed! 🎉</p>}
+        {active.map(p=>{
           const months=getProjectMonths(p);
           const budH=totalBudgetHours(p);
           const tH=totalInputHours(p);
@@ -741,6 +756,29 @@ export default function App() {
             </div>
           );
         })}
+        {completed.length>0&&(
+          <div style={{marginTop:20,paddingTop:16,borderTop:"2px solid #e5e7eb"}}>
+            <h4 style={{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"#6b7280"}}>✓ Completed ({completed.length})</h4>
+            {completed.map(p=>(
+              <div key={p.id} style={cardSt({opacity:0.7,borderLeft:`4px solid ${p.color}`})}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:600,color:"#6b7280",textDecoration:"line-through"}}>{p.name}</div>
+                    {p.client&&<div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>{p.client}</div>}
+                  </div>
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
+                    <BtnDanger onClick={()=>{
+                      if(!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+                      setProj(prev=>prev.filter(x=>x.id!==p.id));
+                      supabase.from('projects').delete().eq('id',p.id).then(({error})=>{if(error)showToast(error.message);});
+                    }}>Delete</BtnDanger>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -791,6 +829,7 @@ export default function App() {
 
   // ── ROSTER TAB ───────────────────────────────────────────────────────────────
   function RosterTab() {
+    const activeProjects=projects.filter(p=>!p.isCompleted);
     const firstDow=(dowOf(rYear,rMonth,1)+6)%7;
     const cells=[];
     for(let i=0;i<firstDow;i++) cells.push(null);
@@ -814,9 +853,9 @@ export default function App() {
             ))}
           </div>
         </div>
-        {projects.length>0&&(
+        {activeProjects.length>0&&(
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-            {projects.map(p=>{
+            {activeProjects.map(p=>{
               const target=monthAllocH(p,rYear,rMonth);
               const actual=projManH(p.id);
               const pct=target>0?Math.round(actual/target*100):0;
@@ -830,8 +869,8 @@ export default function App() {
             })}
           </div>
         )}
-        {(projects.length===0||employees.length===0)&&<div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"#9ca3af",fontSize:14}}>Add projects and employees first to start building the roster.</div>}
-        {projects.length>0&&employees.length>0&&rosterView==="calendar"&&(
+        {(activeProjects.length===0||employees.length===0)&&<div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"#9ca3af",fontSize:14}}>Add projects and employees first to start building the roster.</div>}
+        {activeProjects.length>0&&employees.length>0&&rosterView==="calendar"&&(
           <div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
               {DAYS_SHORT.map(d=><div key={d} style={{fontSize:12,fontWeight:600,textAlign:"center",color:"#6b7280",padding:"4px 0"}}>{d}</div>)}
@@ -865,7 +904,7 @@ export default function App() {
             ))}
           </div>
         )}
-        {projects.length>0&&employees.length>0&&rosterView==="employees"&&(
+        {activeProjects.length>0&&employees.length>0&&rosterView==="employees"&&(
           <div style={{overflowX:"auto"}}>
             <table style={{borderCollapse:"collapse",fontSize:12,width:"100%"}}>
               <thead>
@@ -925,6 +964,7 @@ export default function App() {
 
   // ── CAPACITY TAB ─────────────────────────────────────────────────────────────
   function CapacityTab() {
+    const activeProjects=projects.filter(p=>!p.isCompleted);
     const cap=totalCapH(),sched=scheduledH(),pct=cap>0?Math.round(sched/cap*100):0,rem=cap-sched;
     return (
       <div>
@@ -933,10 +973,10 @@ export default function App() {
           <div style={{fontSize:16,fontWeight:600,color:"#111827",marginBottom:14}}>Overall — {MONTHS[rMonth]} {rYear}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:14}}>
             {[
-              {l:"Total capacity",v:fmtH(cap),s:"all staff"},
-              {l:"Scheduled",v:fmtH(sched),s:`${pct}% utilised`},
+              {l:"Total capacity",v:fmtH(cap),s:`${employees.length} staff`,danger:false},
+              {l:"Scheduled",v:fmtH(sched),s:`${pct}% utilised`,danger:false},
               {l:"Remaining",v:fmtH(Math.max(rem,0)),s:rem<0?"Over capacity":"Available",danger:rem<0},
-              {l:"Working days",v:wdInMonth(rYear,rMonth)+"d",s:"this month"},
+              {l:"Working days",v:wdInMonth(rYear,rMonth)+"d",s:"this month",danger:false},
             ].map(x=>(
               <div key={x.l} style={{background:x.danger?"#fef2f2":"#f9fafb",borderRadius:10,padding:"12px 14px",border:`1.5px solid ${x.danger?"#fecaca":"#e5e7eb"}`}}>
                 <div style={{fontSize:12,color:"#6b7280",marginBottom:2}}>{x.l}</div>
@@ -949,8 +989,8 @@ export default function App() {
           <ProgBar pct={pct} color="#4f46e5"/>
         </div>
         <div style={{fontSize:14,fontWeight:600,color:"#111827",marginBottom:10}}>By project</div>
-        {projects.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No projects yet.</p>}
-        {projects.map(p=>{
+        {activeProjects.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No active projects.</p>}
+        {activeProjects.map(p=>{
           const manH=projManH(p.id),target=monthAllocH(p,rYear,rMonth),pct2=target>0?Math.round(manH/target*100):0;
           const mb=monthBudgetSlice(p,rYear,rMonth),lc=labourCostM(p.id),rev=revenueM(p),margin=rev!==null&&lc>0?rev-lc:null;
           const isH=p.totalUnit==="hours";
@@ -1004,11 +1044,12 @@ export default function App() {
 
   // ── SUMMARY TAB ──────────────────────────────────────────────────────────────
   function SummaryTab() {
+    const activeProjects=projects.filter(p=>!p.isCompleted);
     return (
       <div>
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}><MonthSel val={rMonth} set={setRMo}/><YearSel val={rYear} set={setRYear}/></div>
-        {projects.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No projects to summarise.</p>}
-        {projects.map(p=>{
+        {activeProjects.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No active projects to summarise.</p>}
+        {activeProjects.map(p=>{
           const manH=projManH(p.id),target=monthAllocH(p,rYear,rMonth),pct=target>0?Math.round(manH/target*100):0;
           const staff=employees.filter(e=>calDays.some(d=>getA(rYear,rMonth,d,e.id)===p.id));
           const isH=p.totalUnit==="hours";
