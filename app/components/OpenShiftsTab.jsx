@@ -6,6 +6,7 @@ import {
   cardSt, selSt,
   Lbl, Row2, FocusInp, FocusTxt,
   BtnPri, Btn, BtnDanger, BtnSuccess, ToggleBtn,
+  ConfirmModal,
   StatusBadge, SecTitle, Empty, Tag, StrBtn, Avatar, inits,
   DAYS_SHORT, dlabel, uid,
 } from "./shared";
@@ -105,6 +106,7 @@ export default function OpenShiftsTab({
     const [requiredStrengths, setRequiredStrengths] = useState([]);
     const [notes, setNotes] = useState("");
     const [saving, setSaving] = useState(false);
+    const [openShiftToDelete, setOpenShiftToDelete] = useState(null);
 
     function toggleStrength(s) {
       setRequiredStrengths((prev) =>
@@ -499,7 +501,7 @@ export default function OpenShiftsTab({
                         Mark filled
                       </BtnSuccess>
                     )}
-                    <BtnDanger onClick={() => deleteShift(shift.id)}>
+                    <BtnDanger onClick={() => setOpenShiftToDelete(shift.id)}>
                       Delete
                     </BtnDanger>
                   </div>
@@ -577,6 +579,17 @@ export default function OpenShiftsTab({
               </div>
             );
           })}
+        <ConfirmModal
+          open={!!openShiftToDelete}
+          title="Delete open shift?"
+          message="Remove this open shift posting? This cannot be undone."
+          onCancel={() => setOpenShiftToDelete(null)}
+          onConfirm={() => {
+            const id = openShiftToDelete;
+            setOpenShiftToDelete(null);
+            if (id) deleteShift(id);
+          }}
+        />
       </div>
     );
   }
@@ -592,6 +605,7 @@ export default function OpenShiftsTab({
     const [swapProjectId, setSwapProjectId] = useState(projects[0]?.id || "");
     const [acceptorId, setAcceptorId] = useState("");
     const [swapNotes, setSwapNotes] = useState("");
+    const [swapToDelete, setSwapToDelete] = useState(null);
 
     // Auto-derive project from assigns when requester + date change
     function deriveProject(empId, dateStr) {
@@ -1004,7 +1018,7 @@ export default function OpenShiftsTab({
                       </BtnSuccess>
                     )}
                     {canDelete && (
-                      <BtnDanger onClick={() => deleteSwap(swap.id)}>
+                      <BtnDanger onClick={() => setSwapToDelete(swap.id)}>
                         Delete
                       </BtnDanger>
                     )}
@@ -1013,6 +1027,17 @@ export default function OpenShiftsTab({
               </div>
             );
           })}
+        <ConfirmModal
+          open={!!swapToDelete}
+          title="Delete shift swap?"
+          message="Remove this swap record? This cannot be undone."
+          onCancel={() => setSwapToDelete(null)}
+          onConfirm={() => {
+            const id = swapToDelete;
+            setSwapToDelete(null);
+            if (id) deleteSwap(id);
+          }}
+        />
       </div>
     );
   }

@@ -40,14 +40,69 @@ export function SecTitle({children}) {
 export function Empty({icon,title,sub}) {
   return <div style={{textAlign:"center",padding:"48px 24px",border:"2px dashed #e5e7eb",borderRadius:12}}><div style={{fontSize:32,marginBottom:8}}>{icon}</div><div style={{fontSize:15,fontWeight:500,color:"#6b7280",marginBottom:4}}>{title}</div><div style={{fontSize:13,color:"#9ca3af"}}>{sub}</div></div>;
 }
-export function BtnPri({onClick,children,style={}}) {
-  return <button onClick={onClick} style={{padding:"10px 18px",background:"#4f46e5",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontFamily:"inherit",fontWeight:500,cursor:"pointer",...style}}>{children}</button>;
+export function BtnPri({onClick,children,style={},type="button"}) {
+  return <button type={type} onClick={onClick} style={{padding:"10px 18px",background:"#4f46e5",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontFamily:"inherit",fontWeight:500,cursor:"pointer",...style}}>{children}</button>;
 }
-export function Btn({onClick,children,style={}}) {
-  return <button onClick={onClick} style={{padding:"9px 16px",background:"#fff",color:"#374151",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
+export function Btn({onClick,children,style={},type="button"}) {
+  return <button type={type} onClick={onClick} style={{padding:"9px 16px",background:"#fff",color:"#374151",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
 }
-export function BtnDanger({onClick,children,style={}}) {
-  return <button onClick={onClick} style={{padding:"9px 14px",background:"#fff5f5",color:"#dc2626",border:"1.5px solid #fecaca",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
+export function BtnDanger({onClick,children,style={},type="button"}) {
+  return <button type={type} onClick={onClick} style={{padding:"9px 14px",background:"#fff5f5",color:"#dc2626",border:"1.5px solid #fecaca",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
+}
+
+/** Confirmation dialog; uses z-index above typical overlays. */
+export function ConfirmModal({
+  open,
+  title,
+  message,
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
+  onConfirm,
+  onCancel,
+  confirmDanger = true,
+}) {
+  if (!open) return null;
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.35)",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        zIndex: 300,
+        overflowY: "auto",
+        padding: "32px 12px 48px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          padding: 24,
+          width: "min(440px,100%)",
+          boxShadow: "0 4px 32px rgba(0,0,0,0.15)",
+          marginTop: "10vh",
+        }}
+      >
+        <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 600, color: "#111827" }}>{title}</h3>
+        {message ? (
+          <p style={{ margin: "0 0 20px", fontSize: 14, color: "#6b7280", lineHeight: 1.5 }}>{message}</p>
+        ) : null}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+          <Btn onClick={onCancel}>{cancelLabel}</Btn>
+          {confirmDanger ? (
+            <BtnDanger onClick={onConfirm}>{confirmLabel}</BtnDanger>
+          ) : (
+            <BtnPri onClick={onConfirm}>{confirmLabel}</BtnPri>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 export function BtnSuccess({onClick,children,style={}}) {
   return <button onClick={onClick} style={{padding:"9px 14px",background:"#f0fdf4",color:"#166534",border:"1.5px solid #86efac",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;

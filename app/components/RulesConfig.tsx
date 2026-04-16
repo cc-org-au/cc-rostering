@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ConfirmModal } from './shared';
 import { supabase } from '@/lib/supabase';
 import { RULE_TYPES } from '@/lib/rules/complianceValidator';
 
@@ -24,6 +25,7 @@ export function RulesConfig() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingRule, setEditingRule] = useState<ShiftRule | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ruleToDelete, setRuleToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -60,7 +62,10 @@ export function RulesConfig() {
     }
   };
 
-  const handleDeleteRule = async (ruleId: string) => {
+  const runDeleteRule = async () => {
+    if (!ruleToDelete) return;
+    const ruleId = ruleToDelete;
+    setRuleToDelete(null);
     const { error } = await supabase.from('shift_rules').delete().eq('id', ruleId);
     if (!error) {
       setRules((prev) => prev.filter((r) => r.id !== ruleId));
@@ -150,7 +155,8 @@ export function RulesConfig() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDeleteRule(rule.id)}
+                  type="button"
+                  onClick={() => setRuleToDelete(rule.id)}
                   style={{
                     padding: '6px 12px',
                     background: '#fee2e2',
@@ -168,6 +174,18 @@ export function RulesConfig() {
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        open={!!ruleToDelete}
+        title="Delete rule?"
+        message={
+          ruleToDelete
+            ? `Delete "${rules.find((r) => r.id === ruleToDelete)?.name || 'this rule'}"? This cannot be undone.`
+            : ''
+        }
+        onCancel={() => setRuleToDelete(null)}
+        onConfirm={runDeleteRule}
+      />
 
       {/* Edit Modal */}
       {editingRule && (

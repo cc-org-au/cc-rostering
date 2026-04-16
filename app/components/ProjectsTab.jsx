@@ -6,6 +6,7 @@ import {
   fmt$, fmtH,
   cardSt, inpSt, selSt,
   BtnPri, Btn, BtnDanger,
+  ConfirmModal,
   Overlay, ModalBox, Lbl, Row2,
   FocusInp, FocusTxt, ToggleBtn, StrBtn,
   Tag, Empty,
@@ -199,6 +200,7 @@ function ProjectModal({ proj, isNew, onSave, onClose }) {
 
 export default function ProjectsTab({ projects, setProj, showToast, supabase }) {
   const [modal, setModal] = useState(null); // null | {proj, isNew}
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   const mkProj = () => ({
     id:"", name:"", client:"", color:PROJ_COLORS[0], notes:"",
@@ -226,8 +228,10 @@ export default function ProjectsTab({ projects, setProj, showToast, supabase }) 
     }).then(({error})=>{if(error)showToast(error.message);});
   }
 
-  function deleteProj(p) {
-    if(!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+  function runDeleteProject() {
+    if (!projectToDelete) return;
+    const p = projectToDelete;
+    setProjectToDelete(null);
     setProj(prev=>prev.filter(x=>x.id!==p.id));
     supabase.from("projects").delete().eq("id",p.id).then(({error})=>{if(error)showToast(error.message);});
   }
@@ -267,13 +271,20 @@ export default function ProjectsTab({ projects, setProj, showToast, supabase }) 
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0}}>
                 <Btn onClick={()=>openEdit(p)}>Edit</Btn>
-                <BtnDanger onClick={()=>deleteProj(p)}>Delete</BtnDanger>
+                <BtnDanger onClick={()=>setProjectToDelete(p)}>Delete</BtnDanger>
               </div>
             </div>
           </div>
         );
       })}
       {modal && <ProjectModal proj={modal.proj} isNew={modal.isNew} onSave={handleSave} onClose={()=>setModal(null)}/>}
+      <ConfirmModal
+        open={!!projectToDelete}
+        title="Delete project?"
+        message={projectToDelete ? `Delete "${projectToDelete.name}"? This cannot be undone.` : ""}
+        onCancel={()=>setProjectToDelete(null)}
+        onConfirm={runDeleteProject}
+      />
     </div>
   );
 }

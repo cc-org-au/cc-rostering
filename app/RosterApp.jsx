@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { supabase } from '../lib/supabase.js';
 import UserMenu from './components/UserMenu';
 import { SchedulerDragDrop } from './components/SchedulerDragDrop';
-import { DAYS_SHORT, MONTHS, EMP_TYPES, ROLES, STRENGTHS, PROJ_COLORS, HPD } from './components/shared';
+import { DAYS_SHORT, MONTHS, EMP_TYPES, ROLES, STRENGTHS, PROJ_COLORS, HPD, ConfirmModal } from './components/shared';
 
 const TABS        = ["Projects","Employees","Scheduler","Roster","Capacity","Summary","Admin"];
 const NOW         = new Date();
@@ -267,7 +267,6 @@ export default function App({ auth, demoMode }) {
   const projNameOf=id=>projects.find(p=>p.id===id)?.name||"";
 
   function clearMonth() {
-    if(!window.confirm(`Clear all assignments for ${MONTHS[rMonth]} ${rYear}?`)) return;
     const pre=`${rYear}-${rMonth}-`;
     setAssigns(p=>{const n={...p};Object.keys(n).forEach(k=>{if(k.startsWith(pre))delete n[k];});return n;});
     supabase.from('assignments').delete().eq('year',rYear).eq('month',rMonth).then(({error})=>{if(error)showToast(error.message);});
@@ -692,8 +691,16 @@ export default function App({ auth, demoMode }) {
 
   // ── PROJECTS TAB ─────────────────────────────────────────────────────────────
   function ProjectsTab() {
+    const [projectToDelete, setProjectToDelete] = useState(null);
     const active=projects.filter(p=>!p.isCompleted);
     const completed=projects.filter(p=>p.isCompleted);
+    function runDeleteProject() {
+      if (!projectToDelete) return;
+      const p = projectToDelete;
+      setProjectToDelete(null);
+      setProj(prev=>prev.filter(x=>x.id!==p.id));
+      supabase.from('projects').delete().eq('id',p.id).then(({error})=>{if(error)showToast(error.message);});
+    }
     return (
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -742,11 +749,7 @@ export default function App({ auth, demoMode }) {
                 </div>
                 <div style={{display:"flex",gap:6,flexShrink:0}}>
                   <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
-                  <BtnDanger onClick={()=>{
-                    if(!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
-                    setProj(prev=>prev.filter(x=>x.id!==p.id));
-                    supabase.from('projects').delete().eq('id',p.id).then(({error})=>{if(error)showToast(error.message);});
-                  }}>Delete</BtnDanger>
+                  <BtnDanger onClick={()=>setProjectToDelete(p)}>Delete</BtnDanger>
                 </div>
               </div>
             </div>
@@ -764,23 +767,34 @@ export default function App({ auth, demoMode }) {
                   </div>
                   <div style={{display:"flex",gap:6,flexShrink:0}}>
                     <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
-                    <BtnDanger onClick={()=>{
-                      if(!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
-                      setProj(prev=>prev.filter(x=>x.id!==p.id));
-                      supabase.from('projects').delete().eq('id',p.id).then(({error})=>{if(error)showToast(error.message);});
-                    }}>Delete</BtnDanger>
+                    <BtnDanger onClick={()=>setProjectToDelete(p)}>Delete</BtnDanger>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+        <ConfirmModal
+          open={!!projectToDelete}
+          title="Delete project?"
+          message={projectToDelete ? `Delete "${projectToDelete.name}"? This cannot be undone.` : ""}
+          onCancel={()=>setProjectToDelete(null)}
+          onConfirm={runDeleteProject}
+        />
       </div>
     );
   }
 
   // ── EMPLOYEES TAB ────────────────────────────────────────────────────────────
   function EmployeesTab() {
+    const [employeeToDelete, setEmployeeToDelete] = useState(null);
+    function runDeleteEmployee() {
+      if (!employeeToDelete) return;
+      const e = employeeToDelete;
+      setEmployeeToDelete(null);
+      setEmps(prev=>prev.filter(x=>x.id!==e.id));
+      supabase.from('employees').delete().eq('id',e.id).then(({error})=>{if(error)showToast(error.message);});
+    }
     return (
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -810,21 +824,25 @@ export default function App({ auth, demoMode }) {
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0}}>
                 <Btn onClick={()=>openEmpMod(e)}>Edit</Btn>
-                <BtnDanger onClick={()=>{
-                  if(!window.confirm(`Delete "${e.name}"? This cannot be undone.`)) return;
-                  setEmps(prev=>prev.filter(x=>x.id!==e.id));
-                  supabase.from('employees').delete().eq('id',e.id).then(({error})=>{if(error)showToast(error.message);});
-                }}>Delete</BtnDanger>
+                <BtnDanger onClick={()=>setEmployeeToDelete(e)}>Delete</BtnDanger>
               </div>
             </div>
           </div>
         ))}
+        <ConfirmModal
+          open={!!employeeToDelete}
+          title="Delete employee?"
+          message={employeeToDelete ? `Delete "${employeeToDelete.name}"? This cannot be undone.` : ""}
+          onCancel={()=>setEmployeeToDelete(null)}
+          onConfirm={runDeleteEmployee}
+        />
       </div>
     );
   }
 
   // ── ROSTER TAB ───────────────────────────────────────────────────────────────
   function RosterTab() {
+    const [clearMonthOpen, setClearMonthOpen] = useState(false);
     const activeProjects=projects.filter(p=>!p.isCompleted);
     const firstDow=(dowOf(rYear,rMonth,1)+6)%7;
     const cells=[];
@@ -839,7 +857,7 @@ export default function App({ auth, demoMode }) {
           <MonthSel val={rMonth} set={setRMo}/>
           <YearSel  val={rYear}  set={setRYear}/>
           <BtnPri onClick={autoGenerate}>Auto-generate</BtnPri>
-          <Btn onClick={clearMonth}>Clear month</Btn>
+          <Btn onClick={()=>setClearMonthOpen(true)}>Clear month</Btn>
           <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden"}}>
             {[["calendar","Calendar"],["employees","By employee"]].map(([v,label])=>(
               <button key={v} type="button" onClick={()=>setRView(v)}
@@ -954,6 +972,14 @@ export default function App({ auth, demoMode }) {
             </table>
           </div>
         )}
+        <ConfirmModal
+          open={clearMonthOpen}
+          title="Clear month?"
+          message={`Clear all assignments for ${MONTHS[rMonth]} ${rYear}? This cannot be undone.`}
+          confirmLabel="Clear month"
+          onCancel={()=>setClearMonthOpen(false)}
+          onConfirm={()=>{ setClearMonthOpen(false); clearMonth(); }}
+        />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ConfirmModal } from './shared';
 import { supabase } from '@/lib/supabase';
 import { TRIGGER_TYPES, ACTION_TYPES, WORKFLOW_TEMPLATES } from '@/lib/automation/workflowEngine';
 
@@ -18,6 +19,7 @@ export function AutomationStudio() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [workflowToDelete, setWorkflowToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -62,7 +64,10 @@ export function AutomationStudio() {
     }
   };
 
-  const handleDeleteWorkflow = async (workflowId: string) => {
+  const runDeleteWorkflow = async () => {
+    if (!workflowToDelete) return;
+    const workflowId = workflowToDelete;
+    setWorkflowToDelete(null);
     const { error } = await supabase.from('automation_workflows').delete().eq('id', workflowId);
     if (!error) {
       setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
@@ -191,7 +196,8 @@ export function AutomationStudio() {
                 Edit
               </button>
               <button
-                onClick={() => handleDeleteWorkflow(workflow.id)}
+                type="button"
+                onClick={() => setWorkflowToDelete(workflow.id)}
                 style={{
                   padding: '6px 12px',
                   background: '#fee2e2',
@@ -209,10 +215,23 @@ export function AutomationStudio() {
         ))}
       </div>
 
+      <ConfirmModal
+        open={!!workflowToDelete}
+        title="Delete workflow?"
+        message={
+          workflowToDelete
+            ? `Delete "${workflows.find((w) => w.id === workflowToDelete)?.name || 'this workflow'}"? This cannot be undone.`
+            : ''
+        }
+        onCancel={() => setWorkflowToDelete(null)}
+        onConfirm={runDeleteWorkflow}
+      />
+
       {workflows.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
           <div style={{ fontSize: 14, marginBottom: 12 }}>No workflows configured yet</div>
           <button
+            type="button"
             onClick={() => handleCreateWorkflow()}
             style={{
               padding: '8px 16px',

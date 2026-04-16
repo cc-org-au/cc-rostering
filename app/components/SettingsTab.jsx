@@ -4,6 +4,7 @@ import {
   ROLES, STRENGTHS,
   cardSt, inpSt, selSt,
   BtnPri, Btn, BtnDanger,
+  ConfirmModal,
   Overlay, ModalBox, Lbl, Row2, FocusInp, FocusTxt,
   SecTitle, Tag, Avatar, Alert,
   StatusBadge,
@@ -264,6 +265,8 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
   const [showHolidayForm, setShowHolidayForm] = useState(false);
   const [newHoliday, setNewHoliday] = useState({ date: "", name: "" });
   const [saved, setSaved] = useState(false);
+  const [holidayRemoveIdx, setHolidayRemoveIdx] = useState(null);
+  const [templateLoadCountry, setTemplateLoadCountry] = useState(null);
 
   useEffect(() => {
     setForm({
@@ -304,10 +307,7 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
   }
 
   function loadTemplate(country) {
-    if (window.confirm(`Replace holidays with ${country} public holidays?`)) {
-      const template = HOLIDAY_TEMPLATES[country] || [];
-      setHolidays(template);
-    }
+    setTemplateLoadCountry(country);
   }
 
   return (
@@ -374,7 +374,7 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
                   <div style={{fontWeight:600}}>{h.name}</div>
                   <div style={{color:"#6b7280",marginTop:2}}>{h.date}</div>
                 </div>
-                <BtnDanger onClick={()=>removeHoliday(idx)} style={{fontSize:12,padding:"4px 8px"}}>Remove</BtnDanger>
+                <BtnDanger onClick={()=>setHolidayRemoveIdx(idx)} style={{fontSize:12,padding:"4px 8px"}}>Remove</BtnDanger>
               </div>
             ))}
           </div>
@@ -395,6 +395,34 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
         <BtnPri onClick={save}>Save</BtnPri>
         {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
       </div>
+
+      <ConfirmModal
+        open={holidayRemoveIdx !== null}
+        title="Remove holiday?"
+        message={holidayRemoveIdx !== null && holidays[holidayRemoveIdx]
+          ? `Remove "${holidays[holidayRemoveIdx].name}" (${holidays[holidayRemoveIdx].date}) from the list?`
+          : ""}
+        confirmLabel="Remove"
+        onCancel={()=>setHolidayRemoveIdx(null)}
+        onConfirm={()=>{
+          if (holidayRemoveIdx !== null) removeHoliday(holidayRemoveIdx);
+          setHolidayRemoveIdx(null);
+        }}
+      />
+      <ConfirmModal
+        open={!!templateLoadCountry}
+        title="Replace holidays?"
+        message={templateLoadCountry ? `Replace all holidays with ${templateLoadCountry} public holidays? Your current list will be replaced.` : ""}
+        confirmLabel="Replace all"
+        onCancel={()=>setTemplateLoadCountry(null)}
+        onConfirm={()=>{
+          if (templateLoadCountry) {
+            const template = HOLIDAY_TEMPLATES[templateLoadCountry] || [];
+            setHolidays(template);
+          }
+          setTemplateLoadCountry(null);
+        }}
+      />
     </div>
   );
 }
@@ -590,6 +618,7 @@ function CertificationsSection({ employees, certifications, setCertifications, s
   const [filterEmp, setFilterEmp] = useState("all");
   const [showForm, setShowForm]   = useState(false);
   const [form, setForm] = useState({ employee_id:"", name:"", issued_date:"", expiry_date:"", notes:"" });
+  const [certToDelete, setCertToDelete] = useState(null);
 
   async function saveCert() {
     if (!form.employee_id || !form.name) return showToast("Employee and certification name required.");
@@ -602,8 +631,10 @@ function CertificationsSection({ employees, certifications, setCertifications, s
     showToast("Certification saved.");
   }
 
-  async function deleteCert(id) {
-    if (!window.confirm("Delete this certification?")) return;
+  async function runDeleteCert() {
+    if (!certToDelete) return;
+    const id = certToDelete;
+    setCertToDelete(null);
     const { error } = await supabase.from("certifications").delete().eq("id", id);
     if (error) return showToast(error.message);
     setCertifications(prev => prev.filter(c => c.id !== id));
@@ -685,10 +716,23 @@ function CertificationsSection({ employees, certifications, setCertifications, s
               </div>
               {c.notes && <div style={{fontSize:12,color:"#9ca3af",marginTop:4}}>{c.notes}</div>}
             </div>
-            <BtnDanger onClick={()=>deleteCert(c.id)} style={{fontSize:12}}>Remove</BtnDanger>
+            <BtnDanger onClick={()=>setCertToDelete(c.id)} style={{fontSize:12}}>Remove</BtnDanger>
           </div>
         );
       })}
+      <ConfirmModal
+        open={!!certToDelete}
+        title="Delete certification?"
+        message={(() => {
+          if (!certToDelete) return "";
+          const row = certifications.find((x) => x.id === certToDelete);
+          return row
+            ? `Remove "${row.name}" for ${empName(row.employee_id)}? This cannot be undone.`
+            : "Remove this certification? This cannot be undone.";
+        })()}
+        onCancel={()=>setCertToDelete(null)}
+        onConfirm={runDeleteCert}
+      />
     </div>
   );
 }
