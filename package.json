@@ -8,14 +8,18 @@
     "start": "next start"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
     "@supabase/supabase-js": "^2.103.0",
-    "react-beautiful-dnd": "^13.1.1",
-    "react-big-calendar": "^1.8.5",
-    "recharts": "^2.10.3",
-    "react-hook-form": "^7.51.4",
-    "zod": "^3.22.4",
     "next": "^15.3.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-beautiful-dnd": "^13.1.1",
+    "react-big-calendar": "^1.8.5",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.51.4",
+    "recharts": "^2.10.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
   }
 }

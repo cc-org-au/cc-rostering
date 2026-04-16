@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.js';
 import UserMenu from './components/UserMenu';
-import AdminPanel from './components/AdminPanel';
 import { SchedulerDragDrop } from './components/SchedulerDragDrop';
 import { DAYS_SHORT, MONTHS, EMP_TYPES, ROLES, STRENGTHS, PROJ_COLORS, HPD } from './components/shared';
 
@@ -1112,7 +1111,6 @@ export default function App({ auth, demoMode }) {
       {effectiveTab==="Roster"    && <RosterTab/>}
       {effectiveTab==="Capacity"  && <CapacityTab/>}
       {effectiveTab==="Summary"   && <SummaryTab/>}
-      {effectiveTab==="Admin"     && auth && <AdminPanel auth={auth}/>}
       {dayEd   !== null && <DayEditorModal day={dayEd}/>}
       {projMod !== null && <ProjectModal key={pTick}/>}
       {empMod  !== null && <EmployeeModal key={eTick}/>}

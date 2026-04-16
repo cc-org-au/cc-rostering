@@ -226,6 +226,86 @@ create table if not exists audit_log (
   timestamp         timestamptz not null default now()
 );
 
+-- ── APPLICATION SETTINGS ───────────────────────────────────────────────────────
+create table if not exists settings (
+  key               text primary key,
+  value             jsonb not null,
+  description       text default '',
+  updated_by        uuid,
+  updated_at        timestamptz not null default now()
+);
+
+-- Unique index on key (already ensured by primary key)
+-- Initial settings data
+insert into settings (key, value, description) values
+  ('hpd', '{"value": 8, "label": "Hours per day"}', 'Standard hours per working day'),
+  ('org_name', '{"value": "Organization"}', 'Organization name'),
+  ('org_logo_url', '{"value": ""}', 'Logo URL for branding'),
+  ('timezone', '{"value": "Australia/Sydney", "region": "AU"}', 'Default timezone'),
+  ('currency', '{"value": "AUD"}', 'Currency code'),
+  ('fiscal_year_start_month', '{"value": 6}', 'Fiscal year start (0=Jan, 5=June, etc)'),
+  ('default_rate', '{"value": 45, "unit": "hourly"}', 'Default hourly rate for employees'),
+  ('default_max_hours', '{"value": 160}', 'Default monthly hours limit'),
+  ('weekend_days', '{"value": [5, 6]}', 'Weekend day indices (5=Sat, 6=Sun)'),
+  ('holidays', '{"value": [], "country": "AU"}', 'Public holidays array with dates and names'),
+  ('default_employee_strengths', '{"value": []}', 'List of default skills/strengths'),
+  ('export_format', '{"value": "csv"}', 'Default export format'),
+  ('backup_retention_days', '{"value": 30}', 'Days to retain backups')
+on conflict (key) do nothing;
+
+-- ── ANALYTICS & REPORTING TABLES ──────────────────────────────────────────────
+
+-- Stores snapshots of report data for historical analysis
+create table if not exists report_snapshots (
+  id                text primary key,
+  report_type       text not null check (report_type in ('financial', 'utilization', 'headcount', 'projects', 'compliance', 'forecasts')),
+  year              integer not null,
+  month             integer not null,
+  data              jsonb not null,
+  created_by        uuid references auth.users on delete set null,
+  created_at        timestamptz not null default now()
+);
+
+-- Revenue tracking per project/employee for financial reporting
+create table if not exists revenue_logs (
+  id                text primary key,
+  project_id        text not null references projects(id) on delete cascade,
+  employee_id       text not null references employees(id) on delete cascade,
+  amount            numeric not null default 0,
+  billable_hours    numeric not null default 0,
+  date              date not null,
+  created_at        timestamptz not null default now()
+);
+
+-- Create indices for fast queries
+create index if not exists idx_report_snapshots_type_date 
+  on report_snapshots(report_type, year, month);
+
+create index if not exists idx_revenue_logs_project_date 
+  on revenue_logs(project_id, date);
+
+create index if not exists idx_revenue_logs_employee_date 
+  on revenue_logs(employee_id, date);
+
+create index if not exists idx_revenue_logs_date 
+  on revenue_logs(date);
+
+-- ── RLS for Analytics Tables ──────────────────────────────────────────────────
+
+alter table report_snapshots enable row level security;
+alter table revenue_logs enable row level security;
+
+-- Employees see own revenue, managers see team, admins see all
+create policy "revenue_logs_view" on revenue_logs for select
+  using (
+    (select role from app_users where id = auth.uid()) = 'admin'
+    or employee_id = (select id from app_users where id = auth.uid())
+  );
+
+-- Reports: employees can read their own, managers can read all for now
+create policy "report_snapshots_view" on report_snapshots for select
+  using (true);
+
 -- Enable RLS
 alter table projects    enable row level security;
 alter table employees   enable row level security;
@@ -241,6 +321,7 @@ alter table payroll_runs enable row level security;
 alter table payroll_line_items enable row level security;
 alter table automation_workflows enable row level security;
 alter table audit_log   enable row level security;
+alter table settings    enable row level security;
 
 -- Open policies (no auth yet — tighten once auth is added)
 create policy "public_access" on projects    for all using (true) with check (true);
@@ -257,3 +338,163 @@ create policy "public_access" on payroll_runs for all using (true) with check (t
 create policy "public_access" on payroll_line_items for all using (true) with check (true);
 create policy "public_access" on automation_workflows for all using (true) with check (true);
 create policy "public_access" on audit_log for all using (true) with check (true);
+
+-- Settings: all can read, only admins can update (future: integrate with app_users.role)
+create policy "settings_read" on settings for select using (true);
+create policy "settings_update" on settings for update using (true) with check (true);
+create policy "settings_insert" on settings for insert with check (true);
+
+-- ── NOTIFICATIONS & ALERTS SYSTEM ──────────────────────────────────────────────
+
+-- User notification preferences
+create table if not exists notification_preferences (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users on delete cascade,
+  email_enabled boolean not null default true,
+  sms_enabled boolean not null default false,
+  in_app_enabled boolean not null default true,
+  quiet_hours_enabled boolean not null default false,
+  quiet_hours_start time default '22:00',
+  quiet_hours_end time default '08:00',
+  notification_sounds_enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Alert types and configuration
+create table if not exists alerts_config (
+  id uuid primary key default gen_random_uuid(),
+  alert_type text not null unique,
+  enabled boolean not null default true,
+  threshold numeric,
+  message_template text not null,
+  recipient_roles text[] not null default '{admin,manager}',
+  severity text not null default 'info' check (severity in ('critical', 'high', 'medium', 'low', 'info')),
+  channels text[] not null default '{in_app}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- In-app notifications
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users on delete cascade,
+  type text not null,
+  title text not null,
+  message text not null,
+  related_entity_id text,
+  related_entity_type text,
+  action_url text,
+  read boolean not null default false,
+  archived boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Notification delivery logs
+create table if not exists notification_logs (
+  id uuid primary key default gen_random_uuid(),
+  notification_id uuid not null references notifications(id) on delete cascade,
+  channel text not null check (channel in ('email', 'sms', 'in_app', 'push')),
+  status text not null default 'pending' check (status in ('pending', 'sent', 'failed', 'bounced', 'unsubscribed')),
+  recipient text not null,
+  sent_at timestamptz,
+  error_message text,
+  retry_count integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+-- Alert trigger audit log
+create table if not exists alert_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  alert_type text not null,
+  trigger_reason text not null,
+  triggered_count integer not null default 1,
+  user_ids uuid[] not null default '{}',
+  notification_ids uuid[] not null default '{}',
+  metadata jsonb default '{}',
+  success boolean not null default true,
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
+-- RLS Policies for notifications
+
+alter table notification_preferences enable row level security;
+alter table alerts_config enable row level security;
+alter table notifications enable row level security;
+alter table notification_logs enable row level security;
+alter table alert_audit_log enable row level security;
+
+-- Users can only see/modify their own preferences
+create policy "users_view_own_prefs" on notification_preferences for select
+  using (auth.uid() = user_id);
+
+create policy "users_update_own_prefs" on notification_preferences for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "users_insert_own_prefs" on notification_preferences for insert
+  with check (auth.uid() = user_id);
+
+-- Users can view their own notifications
+create policy "users_view_own_notifications" on notifications for select
+  using (auth.uid() = user_id);
+
+-- Users can update their own notifications (mark as read, archive)
+create policy "users_update_own_notifications" on notifications for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Admins can view all alerts config
+create policy "admins_view_alerts_config" on alerts_config for select
+  using ((select role from app_users where id = auth.uid()) in ('admin', 'manager'));
+
+-- Admins can update alerts config
+create policy "admins_update_alerts_config" on alerts_config for update
+  using ((select role from app_users where id = auth.uid()) = 'admin')
+  with check ((select role from app_users where id = auth.uid()) = 'admin');
+
+-- Admins can view notification logs
+create policy "admins_view_notification_logs" on notification_logs for select
+  using ((select role from app_users where id = auth.uid()) in ('admin', 'manager'));
+
+-- Admins can view alert audit log
+create policy "admins_view_alert_audit" on alert_audit_log for select
+  using ((select role from app_users where id = auth.uid()) in ('admin', 'manager'));
+
+-- Indices for performance
+create index if not exists idx_notifications_user_created 
+  on notifications(user_id, created_at desc);
+
+create index if not exists idx_notifications_user_read 
+  on notifications(user_id, read);
+
+create index if not exists idx_notification_logs_status 
+  on notification_logs(status);
+
+create index if not exists idx_notification_logs_created 
+  on notification_logs(created_at desc);
+
+create index if not exists idx_alert_audit_log_type_created 
+  on alert_audit_log(alert_type, created_at desc);
+
+-- Default alert configurations
+insert into alerts_config (alert_type, enabled, message_template, recipient_roles, severity, channels) values
+  ('understaffed_project', true, 'Project "{project_name}" is understaffed. Current: {current_count}/{required_count} staff', '{manager,dispatcher}', 'high', '{in_app,email}'),
+  ('double_booking_detected', true, 'Double booking detected for {employee_name} on {date}', '{dispatcher,manager}', 'critical', '{in_app,email,sms}'),
+  ('employee_unavailable_assigned', true, '{employee_name} is marked unavailable on {date} but has assignment', '{dispatcher,manager}', 'high', '{in_app,email}'),
+  ('max_hours_violation', true, '{employee_name} approaching max hours ({current}/{max}) in {month}', '{manager}', 'medium', '{in_app,email}'),
+  ('certification_expiring_soon', true, '{employee_name} certification "{cert_name}" expires in {days} days', '{manager}', 'medium', '{in_app,email}'),
+  ('budget_exceeded', true, 'Project "{project_name}" budget exceeded by ${overage}', '{manager,admin}', 'high', '{in_app,email}'),
+  ('leave_conflict', true, 'Assignment conflict: {employee_name} has approved leave on {date} but scheduled', '{dispatcher}', 'high', '{in_app,email}'),
+  ('roster_approval_pending', true, 'Roster for {month}/{year} pending approval', '{manager}', 'medium', '{in_app,email}'),
+  ('skill_mismatch', true, '{employee_name} lacks required skill "{skill}" for {project_name}', '{dispatcher}', 'medium', '{in_app,email}'),
+  ('leave_request_submitted', true, '{employee_name} submitted leave request for {start_date} to {end_date}', '{manager}', 'info', '{in_app,email}'),
+  ('leave_request_approved', true, 'Your leave request for {start_date} to {end_date} has been approved', '{}', 'info', '{in_app,email}'),
+  ('leave_request_denied', true, 'Your leave request for {start_date} to {end_date} has been denied', '{}', 'info', '{in_app,email}'),
+  ('project_completed', true, 'Project "{project_name}" has been completed', '{manager}', 'info', '{in_app,email}'),
+  ('system_backup_complete', true, 'Database backup completed successfully', '{admin}', 'info', '{in_app}'),
+  ('user_activity_unusual', true, 'Unusual activity detected for user {user_email}', '{admin}', 'high', '{in_app,email}'),
+  ('data_export_ready', true, 'Your data export is ready for download', '{}', 'info', '{in_app}')
+on conflict (alert_type) do nothing;

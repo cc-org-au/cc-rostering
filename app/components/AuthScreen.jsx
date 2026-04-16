@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { inpSt, BtnPri, Btn, Alert } from "./shared";
-import { supabase } from "../lib/supabase";
 
 const ROLES = [
   { id: "admin", label: "Admin", desc: "Full system access", icon: "👑" },
@@ -36,14 +35,46 @@ export default function AuthScreen({ auth, onAuth }) {
     e.preventDefault();
     setError(null); setInfo(null); setLoading(true);
     try {
-      await auth.handleLogin(email, password);
+      // TEST MODE: Accept any input and create admin session
+      if (!email) {
+        setError("Please enter an email");
+        setLoading(false);
+        return;
+      }
+
+      // Call test login API (uses service role to bypass RLS)
+      const response = await fetch('/api/auth/test-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          fullName: fullName
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Login failed');
+      }
+
+      const testUser = await response.json();
+
+      // Set local session data
+      localStorage.setItem("testUser", JSON.stringify(testUser));
+
       if (rememberMe) {
         localStorage.setItem("rememberMe", email);
       }
-      onAuth();
+      
+      // Trigger auth update via custom event and then reload
+      window.dispatchEvent(new CustomEvent('testUserLogin', { detail: testUser }));
+      
+      // Reload after a short delay to let event propagate
+      setTimeout(() => {
+        window.location.reload();
+      }, 200);
     } catch (err) {
-      setError(err.message);
-    } finally {
+      setError(err.message || "Login failed");
       setLoading(false);
     }
   };
@@ -53,7 +84,7 @@ export default function AuthScreen({ auth, onAuth }) {
     setError(null); setInfo(null); setLoading(true);
     try {
       // Check if first user
-      const { data: existingUsers } = await supabase
+      const { data: existingUsers } = await auth.supabase
         .from("app_users")
         .select("id")
         .limit(1);

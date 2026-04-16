@@ -1,310 +1,768 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
-  PTO_TYPES,
-  StatusBadge, BtnPri, BtnSuccess, BtnDanger, Btn,
-  Empty, SecTitle, cardSt, selSt, inpSt, Lbl, Avatar, Tag,
-} from "./shared";
+  getMyLeaveBalances,
+  getEmployeeLeaveRequests,
+  requestLeave,
+  approveLeave,
+  rejectLeave,
+  getPendingRequests,
+  getLeaveTypes,
+  getLeaveCalendar,
+  calculateLeaveDays,
+  checkRosterConflicts,
+} from '../lib/useLeave';
 
-function calendarDays(startDate, endDate) {
-  if (!startDate || !endDate) return 0;
-  const s = new Date(startDate);
-  const e = new Date(endDate);
-  if (isNaN(s) || isNaN(e) || e < s) return 0;
-  return Math.round((e - s) / 86400000) + 1;
-}
+const uid = () => Math.random().toString(36).slice(2, 8);
 
-function fmtDateDisplay(iso) {
-  if (!iso) return "";
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
-}
+// ── Toast Notification Component ─────────────────────────────────────────────
 
-const STATUSES = ["All", "pending", "approved", "denied"];
-const STATUS_LABELS = { All: "All", pending: "Pending", approved: "Approved", denied: "Denied" };
+function Toast({ message, type = 'info', onClose }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
-export default function PTOTab({
-  employees,
-  ptoRequests,
-  setPtoRequests,
-  showToast,
-  supabase,
-}) {
-  const [filterEmp, setFilterEmp] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("All");
-
-  // New request form state
-  const [form, setForm] = useState({
-    employee_id: "",
-    type: PTO_TYPES[0],
-    start_date: "",
-    end_date: "",
-    notes: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-
-  function setF(patch) { setForm(prev => ({ ...prev, ...patch })); }
-
-  async function submitRequest() {
-    if (!form.employee_id) { showToast("Please select an employee."); return; }
-    if (!form.start_date || !form.end_date) { showToast("Please select start and end dates."); return; }
-    if (form.end_date < form.start_date) { showToast("End date must be on or after start date."); return; }
-    setSubmitting(true);
-    const id = crypto.randomUUID();
-    const row = {
-      id,
-      employee_id: form.employee_id,
-      type: form.type,
-      start_date: form.start_date,
-      end_date: form.end_date,
-      status: "pending",
-      notes: form.notes,
-    };
-    const { error } = await supabase.from("pto_requests").insert(row);
-    setSubmitting(false);
-    if (error) { showToast(error.message); return; }
-    setPtoRequests(prev => [{ ...row, created_at: new Date().toISOString() }, ...(prev || [])]);
-    setForm({ employee_id: "", type: PTO_TYPES[0], start_date: "", end_date: "", notes: "" });
-  }
-
-  async function updateStatus(id, status) {
-    const { error } = await supabase.from("pto_requests").update({ status }).eq("id", id);
-    if (error) { showToast(error.message); return; }
-    setPtoRequests(prev => (prev || []).map(r => r.id === id ? { ...r, status } : r));
-  }
-
-  async function handleDeny(req) {
-    if (!window.confirm(`Deny ${empName(req.employee_id)}'s ${req.type} request (${fmtDateDisplay(req.start_date)} – ${fmtDateDisplay(req.end_date)})?`)) return;
-    await updateStatus(req.id, "denied");
-  }
-
-  async function handleCancel(req) {
-    if (!window.confirm(`Cancel this ${req.type} request?`)) return;
-    await updateStatus(req.id, "denied");
-  }
-
-  function empName(id) {
-    return employees.find(e => e.id === id)?.name ?? "Unknown";
-  }
-  function empRole(id) {
-    return employees.find(e => e.id === id)?.role ?? "";
-  }
-
-  const sorted = useMemo(() => {
-    return [...(ptoRequests || [])].sort((a, b) => {
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
-  }, [ptoRequests]);
-
-  const filtered = useMemo(() => {
-    return sorted.filter(r => {
-      if (filterEmp !== "all" && r.employee_id !== filterEmp) return false;
-      if (filterStatus !== "All" && r.status !== filterStatus) return false;
-      return true;
-    });
-  }, [sorted, filterEmp, filterStatus]);
-
-  const typeColors = {
-    "Annual Leave": { bg: "#eff6ff", col: "#1d4ed8" },
-    "Sick Leave": { bg: "#fef9c3", col: "#713f12" },
-    "TOIL": { bg: "#ecfdf5", col: "#065f46" },
-    "Long Service Leave": { bg: "#f5f3ff", col: "#5b21b6" },
-    "Unpaid Leave": { bg: "#f3f4f6", col: "#374151" },
-    "Other": { bg: "#fef2f2", col: "#991b1b" },
-  };
+  const bgColor =
+    type === 'success'
+      ? 'bg-green-100 text-green-800'
+      : type === 'error'
+        ? 'bg-red-100 text-red-800'
+        : 'bg-blue-100 text-blue-800';
 
   return (
-    <div>
-      {/* New request form */}
-      <div style={cardSt({ marginBottom: 20 })}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 14 }}>New leave request</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <div>
-            <Lbl>Employee</Lbl>
-            <select
-              value={form.employee_id}
-              onChange={e => setF({ employee_id: e.target.value })}
-              style={selSt({ width: "100%" })}
-            >
-              <option value="">Select employee…</option>
-              {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <Lbl>Leave type</Lbl>
-            <select
-              value={form.type}
-              onChange={e => setF({ type: e.target.value })}
-              style={selSt({ width: "100%" })}
-            >
-              {PTO_TYPES.map(t => <option key={t}>{t}</option>)}
-            </select>
-          </div>
+    <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${bgColor} z-50`}>
+      {message}
+    </div>
+  );
+}
+
+// ── Modal Component ──────────────────────────────────────────────────────────
+
+function Modal({ title, isOpen, onClose, children }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div className="flex justify-between items-center border-b p-6">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            ×
+          </button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <div>
-            <Lbl>Start date</Lbl>
-            <input
-              type="date"
-              value={form.start_date}
-              onChange={e => setF({ start_date: e.target.value })}
-              style={inpSt()}
-              onFocus={e => e.target.style.borderColor = "#4f46e5"}
-              onBlur={e => e.target.style.borderColor = "#d1d5db"}
-            />
-          </div>
-          <div>
-            <Lbl>End date</Lbl>
-            <input
-              type="date"
-              value={form.end_date}
-              min={form.start_date}
-              onChange={e => setF({ end_date: e.target.value })}
-              style={inpSt()}
-              onFocus={e => e.target.style.borderColor = "#4f46e5"}
-              onBlur={e => e.target.style.borderColor = "#d1d5db"}
-            />
-          </div>
-        </div>
-        {form.start_date && form.end_date && form.end_date >= form.start_date && (
-          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
-            {calendarDays(form.start_date, form.end_date)} calendar day{calendarDays(form.start_date, form.end_date) !== 1 ? "s" : ""}
-          </div>
-        )}
-        <div style={{ marginBottom: 12 }}>
-          <Lbl>Notes</Lbl>
-          <textarea
-            value={form.notes}
-            onChange={e => setF({ notes: e.target.value })}
-            placeholder="Optional notes or reason…"
-            rows={2}
-            style={inpSt({ resize: "vertical" })}
-            onFocus={e => e.target.style.borderColor = "#4f46e5"}
-            onBlur={e => e.target.style.borderColor = "#d1d5db"}
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Leave Balance Card Component ──────────────────────────────────────────────
+
+function LeaveBalanceCard({ leaveType, balance, used, available }) {
+  const percentage = balance > 0 ? Math.round((used / balance) * 100) : 0;
+
+  return (
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <div className="flex justify-between items-start mb-3">
+        <h4 className="font-semibold text-gray-900">{leaveType.name}</h4>
+        <span
+          className="inline-block w-3 h-3 rounded-full"
+          style={{ backgroundColor: leaveType.color }}
+        />
+      </div>
+
+      <div className="mb-3">
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="h-2 rounded-full transition-all"
+            style={{
+              width: `${percentage}%`,
+              backgroundColor: leaveType.color,
+            }}
           />
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <BtnPri onClick={submitRequest} style={submitting ? { opacity: 0.6, pointerEvents: "none" } : {}}>
-            {submitting ? "Submitting…" : "Submit request"}
-          </BtnPri>
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="grid grid-cols-3 gap-2 text-center text-sm">
+        <div>
+          <div className="text-gray-500 text-xs">Used</div>
+          <div className="text-lg font-semibold text-gray-900">{used}</div>
+        </div>
+        <div>
+          <div className="text-gray-500 text-xs">Available</div>
+          <div className="text-lg font-semibold text-green-600">{available}</div>
+        </div>
+        <div>
+          <div className="text-gray-500 text-xs">Total</div>
+          <div className="text-lg font-semibold text-gray-900">{balance}</div>
+        </div>
+      </div>
+
+      {!leaveType.paid && <div className="mt-2 text-xs text-gray-500">Unpaid</div>}
+    </div>
+  );
+}
+
+// ── My Leave Tab ──────────────────────────────────────────────────────────────
+
+function MyLeaveTab({ employeeId, year, onRefresh }) {
+  const [balances, setBalances] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [bal, req] = await Promise.all([
+          getMyLeaveBalances(employeeId, year),
+          getEmployeeLeaveRequests(employeeId, year),
+        ]);
+        setBalances(bal);
+        setRequests(req.filter((r) => r.status === 'approved'));
+      } catch (err) {
+        console.error('Failed to load leave data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [employeeId, year, onRefresh]);
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Loading...</div>;
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Current Balances ({year})</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {balances.map((bal) => (
+            <LeaveBalanceCard
+              key={bal.id}
+              leaveType={bal.leaveType}
+              balance={bal.balance}
+              used={bal.used}
+              available={bal.available}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Upcoming Approved Leave</h3>
+        {requests.length === 0 ? (
+          <p className="text-gray-500">No approved leave scheduled</p>
+        ) : (
+          <div className="space-y-2">
+            {requests.map((req) => (
+              <div key={req.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-gray-900">{req.leaveType.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(req.startDate).toLocaleDateString()} -{' '}
+                      {new Date(req.endDate).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-500">{req.daysRequested} days</p>
+                  </div>
+                  <span className="inline-block px-3 py-1 text-xs font-semibold text-white bg-green-600 rounded-full">
+                    Approved
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Request Leave Tab ────────────────────────────────────────────────────────
+
+function RequestLeaveTab({ employeeId, onRefresh }) {
+  const [leaveTypes, setLeaveTypes] = useState([]);
+  const [selectedType, setSelectedType] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [daysCalculated, setDaysCalculated] = useState(0);
+  const [reason, setReason] = useState('');
+  const [notes, setNotes] = useState('');
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [conflict, setConflict] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    const loadLeaveTypes = async () => {
+      try {
+        const types = await getLeaveTypes();
+        setLeaveTypes(types);
+        if (types.length > 0) setSelectedType(types[0].id);
+      } catch (err) {
+        console.error('Failed to load leave types:', err);
+      }
+    };
+
+    loadLeaveTypes();
+  }, []);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      const days = calculateLeaveDays(startDate, endDate);
+      setDaysCalculated(days);
+    }
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (selectedType && startDate && endDate) {
+        try {
+          const year = new Date(startDate).getFullYear();
+          const balances = await getMyLeaveBalances(employeeId, year);
+          const balance = balances.find((b) => b.leaveType.id === selectedType);
+          if (balance) {
+            setAvailableBalance(balance.available);
+          }
+
+          // Check conflicts
+          const conflicts = await checkRosterConflicts(employeeId, startDate, endDate);
+          setConflict(conflicts.length > 0 ? conflicts : null);
+        } catch (err) {
+          console.error('Failed to check balance:', err);
+        }
+      }
+    };
+
+    checkBalance();
+  }, [selectedType, startDate, endDate, employeeId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedType || !startDate || !endDate) {
+      setToast({ message: 'Please fill in all required fields', type: 'error' });
+      return;
+    }
+
+    if (daysCalculated > availableBalance && availableBalance > 0) {
+      setToast({ message: 'Insufficient leave balance', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await requestLeave(employeeId, selectedType, startDate, endDate, reason, notes);
+      setToast({ message: 'Leave request submitted successfully', type: 'success' });
+      setStartDate('');
+      setEndDate('');
+      setReason('');
+      setNotes('');
+      onRefresh();
+    } catch (err) {
+      setToast({ message: `Error: ${err.message}`, type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedLeaveType = leaveTypes.find((t) => t.id === selectedType);
+
+  return (
+    <form onSubmit={handleSubmit} className="p-6 max-w-2xl space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Leave Type *</label>
         <select
-          value={filterEmp}
-          onChange={e => setFilterEmp(e.target.value)}
-          style={selSt({ width: "auto" })}
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="all">All employees</option>
-          {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+          {leaveTypes.map((type) => (
+            <option key={type.id} value={type.id}>
+              {type.name} {!type.paid ? '(Unpaid)' : ''}
+            </option>
+          ))}
         </select>
-        <div style={{ display: "flex", border: "1.5px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}>
-          {STATUSES.map(s => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setFilterStatus(s)}
-              style={{
-                padding: "8px 14px", border: "none", fontFamily: "inherit",
-                fontSize: 13, fontWeight: 500, cursor: "pointer",
-                background: filterStatus === s ? "#4f46e5" : "#fff",
-                color: filterStatus === s ? "#fff" : "#374151",
-                whiteSpace: "nowrap",
-              }}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">End Date *</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {daysCalculated > 0 && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-900">
+            <strong>{daysCalculated} days</strong> selected (excluding weekends)
+          </p>
+          <p className="text-sm text-blue-700">
+            Available: <strong>{availableBalance} days</strong>
+          </p>
+        </div>
+      )}
+
+      {conflict && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm font-medium text-amber-900">
+            ⚠ Roster Conflicts Detected
+          </p>
+          <p className="text-sm text-amber-800">
+            {conflict.length} assignment(s) on requested dates will be affected
+          </p>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+        <input
+          type="text"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="e.g., Personal, Medical, etc."
+          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Any additional information..."
+          rows={3}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? 'Submitting...' : 'Submit Request'}
+        </button>
+      </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </form>
+  );
+}
+
+// ── Pending Requests Tab ──────────────────────────────────────────────────────
+
+function PendingRequestsTab({ onRefresh }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [removeConflicts, setRemoveConflicts] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        const pending = await getPendingRequests();
+        setRequests(pending);
+      } catch (err) {
+        console.error('Failed to load pending requests:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, [onRefresh]);
+
+  const handleApprove = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      await approveLeave(selectedRequest.id, 'admin', removeConflicts);
+      setToast({ message: 'Leave approved successfully', type: 'success' });
+      setRequests(requests.filter((r) => r.id !== selectedRequest.id));
+      setShowConflictModal(false);
+      setSelectedRequest(null);
+      onRefresh();
+    } catch (err) {
+      if (err.message.includes('Roster conflicts')) {
+        setShowConflictModal(true);
+      } else {
+        setToast({ message: `Error: ${err.message}`, type: 'error' });
+      }
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      await rejectLeave(selectedRequest.id, 'admin', rejectReason);
+      setToast({ message: 'Leave rejected successfully', type: 'success' });
+      setRequests(requests.filter((r) => r.id !== selectedRequest.id));
+      setShowRejectModal(false);
+      setSelectedRequest(null);
+      onRefresh();
+    } catch (err) {
+      setToast({ message: `Error: ${err.message}`, type: 'error' });
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Loading...</div>;
+  }
+
+  return (
+    <div className="p-6 space-y-4">
+      <h3 className="text-lg font-semibold">Pending Leave Requests ({requests.length})</h3>
+
+      {requests.length === 0 ? (
+        <p className="text-gray-500">No pending requests</p>
+      ) : (
+        <div className="space-y-3">
+          {requests.map((req) => (
+            <div
+              key={req.id}
+              className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
             >
-              {STATUS_LABELS[s]}
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="font-semibold text-gray-900">{req.employee.name}</p>
+                  <p className="text-sm text-gray-600">{req.leaveType.name}</p>
+                </div>
+                <span
+                  className="inline-block px-2 py-1 text-xs font-semibold text-white rounded"
+                  style={{ backgroundColor: req.leaveType.color }}
+                >
+                  {req.daysRequested} days
+                </span>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-3">
+                {new Date(req.startDate).toLocaleDateString()} -{' '}
+                {new Date(req.endDate).toLocaleDateString()}
+              </p>
+
+              {req.notes && <p className="text-sm text-gray-600 mb-3 italic">{req.notes}</p>}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedRequest(req);
+                    handleApprove();
+                  }}
+                  className="flex-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedRequest(req);
+                    setShowRejectModal(true);
+                  }}
+                  className="flex-1 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        title="Reject Leave Request"
+        isOpen={showRejectModal}
+        onClose={() => setShowRejectModal(false)}
+      >
+        <div className="space-y-4">
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Reason for rejection..."
+            rows={3}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowRejectModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleReject}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        title="Roster Conflicts"
+        isOpen={showConflictModal}
+        onClose={() => setShowConflictModal(false)}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            This employee has assignments scheduled on the requested leave dates.
+          </p>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={removeConflicts}
+              onChange={(e) => setRemoveConflicts(e.target.checked)}
+              className="w-4 h-4 border border-gray-300 rounded"
+            />
+            <span className="text-sm text-gray-700">Remove conflicting assignments</span>
+          </label>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowConflictModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleApprove}
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Approve
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Leave Calendar Tab ────────────────────────────────────────────────────────
+
+function LeaveCalendarTab({ year, month }) {
+  const [calendar, setCalendar] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCalendar = async () => {
+      try {
+        const cal = await getLeaveCalendar(year, month);
+        setCalendar(cal);
+      } catch (err) {
+        console.error('Failed to load calendar:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCalendar();
+  }, [year, month]);
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Loading...</div>;
+  }
+
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+  const days = [];
+
+  for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d));
+  }
+
+  return (
+    <div className="p-6">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-auto">
+        <div className="grid grid-cols-7 gap-px bg-gray-200">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            <div key={day} className="bg-white p-3 text-center font-semibold text-gray-700 text-sm">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-px bg-gray-200 auto-rows-[100px]">
+          {days.map((day) => {
+            const dateKey = day.toISOString().split('T')[0];
+            const dayLeave = calendar[dateKey] || [];
+            const isCurrentMonth = day.getMonth() === month;
+            const dayName = day.getDate();
+
+            return (
+              <div
+                key={dateKey}
+                className={`p-2 min-h-full ${
+                  isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+                } ${day.getDay() === 0 || day.getDay() === 6 ? 'bg-gray-100' : ''}`}
+              >
+                <div className="text-sm font-medium text-gray-700 mb-1">{dayName}</div>
+                <div className="space-y-1">
+                  {dayLeave.map((leave, idx) => (
+                    <div
+                      key={idx}
+                      className="text-xs px-1 py-0.5 rounded text-white truncate"
+                      style={{ backgroundColor: leave.leaveColor }}
+                      title={`${leave.employeeName} - ${leave.leaveType}`}
+                    >
+                      {leave.employeeName}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main PTOTab Component ────────────────────────────────────────────────────
+
+export default function PTOTab({ employeeId = 'emp-1', userRole = 'employee' }) {
+  const [activeTab, setActiveTab] = useState('my-leave');
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth());
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+
+  const tabs = [
+    { id: 'my-leave', label: 'My Leave', role: ['employee', 'manager', 'admin'] },
+    { id: 'request', label: 'Request Leave', role: ['employee', 'manager', 'admin'] },
+    { id: 'pending', label: 'Pending Requests', role: ['manager', 'admin'] },
+    { id: 'calendar', label: 'Leave Calendar', role: ['manager', 'admin'] },
+  ];
+
+  const visibleTabs = tabs.filter((t) => t.role.includes(userRole));
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Tabs Navigation */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="flex gap-1 p-4">
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab.label}
             </button>
           ))}
         </div>
-        <div style={{ marginLeft: "auto", fontSize: 13, color: "#6b7280" }}>
-          {filtered.length} request{filtered.length !== 1 ? "s" : ""}
-        </div>
+
+        {/* Year/Month Selector */}
+        {['calendar'].includes(activeTab) && (
+          <div className="flex gap-4 px-4 pb-4 text-sm">
+            <select
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value))}
+              className="p-2 border border-gray-300 rounded-lg"
+            >
+              {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+            {['calendar'].includes(activeTab) && (
+              <select
+                value={month}
+                onChange={(e) => setMonth(parseInt(e.target.value))}
+                className="p-2 border border-gray-300 rounded-lg"
+              >
+                {[
+                  'January',
+                  'February',
+                  'March',
+                  'April',
+                  'May',
+                  'June',
+                  'July',
+                  'August',
+                  'September',
+                  'October',
+                  'November',
+                  'December',
+                ].map((m, idx) => (
+                  <option key={idx} value={idx}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Empty state */}
-      {filtered.length === 0 && (
-        <Empty
-          icon="🌴"
-          title="No leave requests"
-          sub={filterStatus !== "All" || filterEmp !== "all"
-            ? "No requests match the current filters."
-            : "Submit a new leave request above."}
-        />
-      )}
-
-      {/* Request cards */}
-      {filtered.map(req => {
-        const days = calendarDays(req.start_date, req.end_date);
-        const tc = typeColors[req.type] ?? { bg: "#f3f4f6", col: "#374151" };
-        const isPending = req.status === "pending";
-
-        return (
-          <div key={req.id} style={cardSt({ marginBottom: 10 })}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <Avatar name={empName(req.employee_id)} color="#4f46e5" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>
-                    {empName(req.employee_id)}
-                  </span>
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>{empRole(req.employee_id)}</span>
-                  <StatusBadge status={req.status} />
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: req.notes ? 6 : 0 }}>
-                  <Tag bg={tc.bg} col={tc.col}>{req.type}</Tag>
-                  <span style={{ fontSize: 13, color: "#374151" }}>
-                    {fmtDateDisplay(req.start_date)}
-                    {req.start_date !== req.end_date && ` – ${fmtDateDisplay(req.end_date)}`}
-                  </span>
-                  <span style={{
-                    fontSize: 12, padding: "2px 8px", borderRadius: 99,
-                    background: "#f3f4f6", color: "#6b7280", border: "1px solid #e5e7eb",
-                  }}>
-                    {days} day{days !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                {req.notes && (
-                  <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4, fontStyle: "italic" }}>
-                    {req.notes}
-                  </div>
-                )}
-                {req.created_at && (
-                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>
-                    Submitted {fmtDateDisplay(req.created_at.slice(0, 10))}
-                  </div>
-                )}
-              </div>
-
-              {/* Action buttons */}
-              <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "flex-start" }}>
-                {isPending && (
-                  <>
-                    <BtnSuccess onClick={() => updateStatus(req.id, "approved")}>
-                      Approve
-                    </BtnSuccess>
-                    <BtnDanger onClick={() => handleDeny(req)}>
-                      Deny
-                    </BtnDanger>
-                    <Btn onClick={() => handleCancel(req)}>
-                      Cancel
-                    </Btn>
-                  </>
-                )}
-                {!isPending && req.status === "approved" && (
-                  <Btn onClick={() => {
-                    if (window.confirm("Revert this approval to pending?")) updateStatus(req.id, "pending");
-                  }}>
-                    Revert
-                  </Btn>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+      {/* Tab Content */}
+      <div className="flex-1 overflow-auto">
+        {activeTab === 'my-leave' && (
+          <MyLeaveTab
+            key={refreshKey}
+            employeeId={employeeId}
+            year={year}
+            onRefresh={handleRefresh}
+          />
+        )}
+        {activeTab === 'request' && (
+          <RequestLeaveTab
+            key={refreshKey}
+            employeeId={employeeId}
+            onRefresh={handleRefresh}
+          />
+        )}
+        {activeTab === 'pending' && (
+          <PendingRequestsTab key={refreshKey} onRefresh={handleRefresh} />
+        )}
+        {activeTab === 'calendar' && (
+          <LeaveCalendarTab year={year} month={month} />
+        )}
+      </div>
     </div>
   );
 }

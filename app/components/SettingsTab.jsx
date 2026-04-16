@@ -8,6 +8,14 @@ import {
   SecTitle, Tag, Avatar, Alert,
   StatusBadge,
 } from "./shared";
+import { useSettings } from "../lib/useSettings";
+import {
+  exportRoster, exportEmployees, exportProjects, exportTimesheets, exportMonthlyBundle
+} from "../lib/exportData";
+import {
+  validateEmployeesCSV, applyEmployeeImport, validateHolidayCSV,
+  downloadEmployeeTemplate, downloadHolidayTemplate, HOLIDAY_TEMPLATES
+} from "../lib/importData";
 
 const CERT_NAMES = [
   "First Aid Certificate","CPR Certificate","White Card (Construction Induction)",
@@ -17,7 +25,567 @@ const CERT_NAMES = [
   "Pesticide Applicator Licence","Herbicide Handling Certificate","Other",
 ];
 
-// ── Certifications section ─────────────────────────────────────────────────────
+const TIMEZONES = [
+  'UTC', 'Australia/Sydney', 'Australia/Melbourne', 'Australia/Brisbane',
+  'Australia/Perth', 'Europe/London', 'America/New_York', 'America/Los_Angeles'
+];
+
+const CURRENCIES = ['AUD', 'USD', 'GBP', 'EUR', 'NZD'];
+
+// ── Organization Section ──────────────────────────────────────────────────
+function OrganizationSection({ getSetting, setSetting, showToast, supabase }) {
+  const [form, setForm] = useState({ org_name: "", org_logo_url: "", color: "" });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      org_name: getSetting('org_name') || 'Organization',
+      org_logo_url: getSetting('org_logo_url') || '',
+      color: '#4f46e5',
+    });
+  }, [getSetting]);
+
+  async function save() {
+    try {
+      await setSetting('org_name', form.org_name);
+      await setSetting('org_logo_url', form.org_logo_url);
+      setSaved(true);
+      showToast("Organization settings saved.");
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
+  return (
+    <div style={cardSt()}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+        <span>🏢</span> Organization
+      </div>
+      <Row2>
+        <div>
+          <Lbl>Organization Name</Lbl>
+          <FocusInp value={form.org_name} onChange={e=>setForm(f=>({...f,org_name:e.target.value}))}/>
+        </div>
+        <div>
+          <Lbl>Logo URL</Lbl>
+          <FocusInp value={form.org_logo_url} onChange={e=>setForm(f=>({...f,org_logo_url:e.target.value}))} placeholder="https://..."/>
+        </div>
+      </Row2>
+      {form.org_logo_url && (
+        <div style={{marginTop:12,padding:12,background:"#f3f4f6",borderRadius:6}}>
+          <img src={form.org_logo_url} style={{maxHeight:80,maxWidth:200}} alt="Logo preview" onError={()=>{}}/>
+        </div>
+      )}
+      <div style={{display:"flex",gap:8,marginTop:16}}>
+        <BtnPri onClick={save}>Save</BtnPri>
+        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Business Rules Section ─────────────────────────────────────────────────
+function BusinessRulesSection({ getSetting, setSetting, showToast }) {
+  const [form, setForm] = useState({
+    hpd: 8,
+    min_shift_duration: 4,
+    max_shift_duration: 12,
+    weekend_days: [5, 6],
+  });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      hpd: getSetting('hpd') || 8,
+      min_shift_duration: 4,
+      max_shift_duration: 12,
+      weekend_days: getSetting('weekend_days') || [5, 6],
+    });
+  }, [getSetting]);
+
+  async function save() {
+    try {
+      await setSetting('hpd', form.hpd);
+      await setSetting('weekend_days', form.weekend_days);
+      setSaved(true);
+      showToast("Business rules updated.");
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const toggleWeekendDay = (idx) => {
+    setForm(f => ({
+      ...f,
+      weekend_days: f.weekend_days.includes(idx)
+        ? f.weekend_days.filter(d => d !== idx)
+        : [...f.weekend_days, idx]
+    }));
+  };
+
+  return (
+    <div style={cardSt()}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+        <span>⚙️</span> Business Rules
+      </div>
+      <Row2>
+        <div>
+          <Lbl>Hours per Day (HPD)</Lbl>
+          <input type="number" min={1} max={24} value={form.hpd}
+            onChange={e=>setForm(f=>({...f,hpd:parseInt(e.target.value)||8}))}
+            style={inpSt()}/>
+        </div>
+        <div>
+          <Lbl>Min Shift Duration (hours)</Lbl>
+          <input type="number" min={1} max={24} value={form.min_shift_duration}
+            onChange={e=>setForm(f=>({...f,min_shift_duration:parseInt(e.target.value)||4}))}
+            style={inpSt()}/>
+        </div>
+      </Row2>
+      <Row2>
+        <div>
+          <Lbl>Max Shift Duration (hours)</Lbl>
+          <input type="number" min={1} max={24} value={form.max_shift_duration}
+            onChange={e=>setForm(f=>({...f,max_shift_duration:parseInt(e.target.value)||12}))}
+            style={inpSt()}/>
+        </div>
+      </Row2>
+      <div style={{marginTop:16}}>
+        <Lbl>Weekend Days</Lbl>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>
+          {dayNames.map((day, idx) => (
+            <button key={idx} type="button" onClick={()=>toggleWeekendDay(idx)}
+              style={{
+                padding:"8px 12px",
+                borderRadius:6,
+                border:"1.5px solid",
+                borderColor: form.weekend_days.includes(idx) ? "#4f46e5" : "#d1d5db",
+                background: form.weekend_days.includes(idx) ? "#eef2ff" : "#fff",
+                color: form.weekend_days.includes(idx) ? "#4f46e5" : "#6b7280",
+                fontSize:13,
+                fontWeight:500,
+                cursor:"pointer",
+              }}>
+              {day}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8,marginTop:16}}>
+        <BtnPri onClick={save}>Save</BtnPri>
+        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Defaults Section ───────────────────────────────────────────────────────
+function DefaultsSection({ getSetting, setSetting, showToast }) {
+  const [form, setForm] = useState({
+    default_rate: 45,
+    default_max_hours: 160,
+    default_strengths: "",
+  });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const strengths = getSetting('default_employee_strengths') || [];
+    setForm({
+      default_rate: getSetting('default_rate') || 45,
+      default_max_hours: getSetting('default_max_hours') || 160,
+      default_strengths: Array.isArray(strengths) ? strengths.join(', ') : "",
+    });
+  }, [getSetting]);
+
+  async function save() {
+    try {
+      await setSetting('default_rate', form.default_rate);
+      await setSetting('default_max_hours', form.default_max_hours);
+      const strengthsList = form.default_strengths
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      await setSetting('default_employee_strengths', strengthsList);
+      setSaved(true);
+      showToast("Defaults updated.");
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
+  return (
+    <div style={cardSt()}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+        <span>📋</span> Defaults
+      </div>
+      <Row2>
+        <div>
+          <Lbl>Default Hourly Rate ($)</Lbl>
+          <input type="number" min={0} step={0.01} value={form.default_rate}
+            onChange={e=>setForm(f=>({...f,default_rate:parseFloat(e.target.value)||0}))}
+            style={inpSt()}/>
+        </div>
+        <div>
+          <Lbl>Default Max Hours/Month</Lbl>
+          <input type="number" min={0} value={form.default_max_hours}
+            onChange={e=>setForm(f=>({...f,default_max_hours:parseInt(e.target.value)||160}))}
+            style={inpSt()}/>
+        </div>
+      </Row2>
+      <div>
+        <Lbl>Default Employee Skills (comma-separated)</Lbl>
+        <FocusTxt value={form.default_strengths}
+          onChange={e=>setForm(f=>({...f,default_strengths:e.target.value}))}
+          placeholder="e.g. Electrical, Plumbing, Safety"/>
+        <div style={{fontSize:12,color:"#6b7280",marginTop:6}}>
+          Separate multiple skills with commas
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8,marginTop:16}}>
+        <BtnPri onClick={save}>Save</BtnPri>
+        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Calendar Section ──────────────────────────────────────────────────────
+function CalendarSection({ getSetting, setSetting, showToast }) {
+  const [form, setForm] = useState({
+    timezone: 'Australia/Sydney',
+    fiscal_year_start: 6,
+    currency: 'AUD',
+  });
+  const [holidays, setHolidays] = useState([]);
+  const [showHolidayForm, setShowHolidayForm] = useState(false);
+  const [newHoliday, setNewHoliday] = useState({ date: "", name: "" });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      timezone: getSetting('timezone') || 'Australia/Sydney',
+      fiscal_year_start: getSetting('fiscal_year_start_month') || 6,
+      currency: getSetting('currency') || 'AUD',
+    });
+    const hols = getSetting('holidays');
+    setHolidays(Array.isArray(hols) ? hols : []);
+  }, [getSetting]);
+
+  async function save() {
+    try {
+      await setSetting('timezone', form.timezone);
+      await setSetting('fiscal_year_start_month', form.fiscal_year_start);
+      await setSetting('currency', form.currency);
+      await setSetting('holidays', holidays);
+      setSaved(true);
+      showToast("Calendar settings saved.");
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
+  async function addHoliday() {
+    if (!newHoliday.date || !newHoliday.name) {
+      showToast("Date and name required");
+      return;
+    }
+    setHolidays([...holidays, newHoliday]);
+    setNewHoliday({ date: "", name: "" });
+    setShowHolidayForm(false);
+  }
+
+  function removeHoliday(idx) {
+    setHolidays(holidays.filter((_, i) => i !== idx));
+  }
+
+  function loadTemplate(country) {
+    if (window.confirm(`Replace holidays with ${country} public holidays?`)) {
+      const template = HOLIDAY_TEMPLATES[country] || [];
+      setHolidays(template);
+    }
+  }
+
+  return (
+    <div style={cardSt()}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+        <span>📅</span> Calendar & Regional
+      </div>
+      <Row2>
+        <div>
+          <Lbl>Timezone</Lbl>
+          <select value={form.timezone} onChange={e=>setForm(f=>({...f,timezone:e.target.value}))}
+            style={selSt()}>
+            {TIMEZONES.map(tz => <option key={tz}>{tz}</option>)}
+          </select>
+        </div>
+        <div>
+          <Lbl>Fiscal Year Start Month</Lbl>
+          <select value={form.fiscal_year_start} onChange={e=>setForm(f=>({...f,fiscal_year_start:parseInt(e.target.value)}))}
+            style={selSt()}>
+            {['January','February','March','April','May','June','July','August','September','October','November','December']
+              .map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
+        </div>
+        <div>
+          <Lbl>Currency</Lbl>
+          <select value={form.currency} onChange={e=>setForm(f=>({...f,currency:e.target.value}))}
+            style={selSt()}>
+            {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+      </Row2>
+
+      <div style={{marginTop:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <Lbl>Public Holidays ({holidays.length})</Lbl>
+          <BtnPri onClick={()=>setShowHolidayForm(v=>!v)} style={{fontSize:13,padding:"6px 12px"}}>+ Add holiday</BtnPri>
+        </div>
+
+        {showHolidayForm && (
+          <div style={{...cardSt({background:"#f9fafb"}),marginBottom:12}}>
+            <Row2>
+              <div>
+                <Lbl>Date</Lbl>
+                <input type="date" value={newHoliday.date} onChange={e=>setNewHoliday(h=>({...h,date:e.target.value}))}
+                  style={inpSt()}/>
+              </div>
+              <div>
+                <Lbl>Holiday Name</Lbl>
+                <FocusInp value={newHoliday.name} onChange={e=>setNewHoliday(h=>({...h,name:e.target.value}))}/>
+              </div>
+            </Row2>
+            <div style={{display:"flex",gap:8,marginTop:12}}>
+              <BtnPri onClick={addHoliday}>Add</BtnPri>
+              <Btn onClick={()=>setShowHolidayForm(false)}>Cancel</Btn>
+            </div>
+          </div>
+        )}
+
+        {holidays.length > 0 && (
+          <div style={{marginBottom:12,maxHeight:300,overflowY:"auto"}}>
+            {holidays.map((h, idx) => (
+              <div key={idx} style={{...cardSt({display:"flex",justifyContent:"space-between",alignItems:"center"}),fontSize:13}}>
+                <div>
+                  <div style={{fontWeight:600}}>{h.name}</div>
+                  <div style={{color:"#6b7280",marginTop:2}}>{h.date}</div>
+                </div>
+                <BtnDanger onClick={()=>removeHoliday(idx)} style={{fontSize:12,padding:"4px 8px"}}>Remove</BtnDanger>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",fontSize:12}}>
+          <span style={{color:"#6b7280"}}>Quick load:</span>
+          {Object.keys(HOLIDAY_TEMPLATES).map(country => (
+            <button key={country} type="button" onClick={()=>loadTemplate(country)}
+              style={{padding:"4px 10px",background:"#f3f4f6",border:"1px solid #e5e7eb",borderRadius:4,cursor:"pointer",fontSize:12,color:"#374151"}}>
+              {country}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:8,marginTop:16}}>
+        <BtnPri onClick={save}>Save</BtnPri>
+        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Export Section ─────────────────────────────────────────────────────────
+function ExportSection({ employees, projects, assignments, year, month, showToast }) {
+  const [exporting, setExporting] = useState(null);
+
+  async function handleExport(type) {
+    try {
+      setExporting(type);
+      let result;
+      switch(type) {
+        case 'roster':
+          result = exportRoster(assignments, employees, projects, year, month);
+          showToast(`✓ Exported ${result.rows} roster entries`);
+          break;
+        case 'employees':
+          result = exportEmployees(employees);
+          showToast(`✓ Exported ${result.rows} employees`);
+          break;
+        case 'projects':
+          result = exportProjects(projects);
+          showToast(`✓ Exported ${result.rows} projects`);
+          break;
+        case 'timesheets':
+          result = exportTimesheets(assignments, employees, year, month);
+          showToast(`✓ Exported ${result.rows} timesheets`);
+          break;
+        case 'bundle':
+          result = exportMonthlyBundle(assignments, employees, projects, year, month);
+          showToast(`✓ Exported bundle with ${result.rosterRows} roster and ${result.timesheetRows} timesheets`);
+          break;
+      }
+    } catch (err) {
+      showToast(err.message || "Export failed");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  return (
+    <div style={cardSt()}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+        <span>📥</span> Export Data
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+        <BtnPri onClick={()=>handleExport('roster')} disabled={exporting==='roster'} style={{fontSize:13}}>
+          {exporting==='roster' ? "Exporting..." : "📋 Roster"}
+        </BtnPri>
+        <BtnPri onClick={()=>handleExport('employees')} disabled={exporting==='employees'} style={{fontSize:13}}>
+          {exporting==='employees' ? "Exporting..." : "👥 Employees"}
+        </BtnPri>
+        <BtnPri onClick={()=>handleExport('projects')} disabled={exporting==='projects'} style={{fontSize:13}}>
+          {exporting==='projects' ? "Exporting..." : "🎯 Projects"}
+        </BtnPri>
+        <BtnPri onClick={()=>handleExport('timesheets')} disabled={exporting==='timesheets'} style={{fontSize:13}}>
+          {exporting==='timesheets' ? "Exporting..." : "⏱️ Timesheets"}
+        </BtnPri>
+        <BtnPri onClick={()=>handleExport('bundle')} disabled={exporting==='bundle'} style={{fontSize:13}}>
+          {exporting==='bundle' ? "Exporting..." : "📦 Bundle"}
+        </BtnPri>
+      </div>
+      <div style={{fontSize:12,color:"#6b7280",marginTop:12}}>
+        Downloads are timestamped and include all data for selected scope.
+      </div>
+    </div>
+  );
+}
+
+// ── Import Section ─────────────────────────────────────────────────────────
+function ImportSection({ employees, setEmployees, showToast, supabase }) {
+  const [showImport, setShowImport] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importType, setImportType] = useState('employees');
+  const [preview, setPreview] = useState(null);
+  const [action, setAction] = useState('skip');
+  const [importing, setImporting] = useState(false);
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const text = await file.text();
+    setImportFile(text);
+
+    if (importType === 'employees') {
+      const result = validateEmployeesCSV(text, employees);
+      setPreview(result);
+    }
+  }
+
+  async function handleImport() {
+    if (!preview) return;
+    setImporting(true);
+    try {
+      const result = await applyEmployeeImport(preview.valid, preview.duplicates, supabase, action);
+      if (result.imported > 0) {
+        showToast(`✓ Imported ${result.imported} employees`);
+        if (result.skipped > 0) showToast(`⚠ Skipped ${result.skipped} duplicates`);
+      } else {
+        showToast("No employees imported");
+      }
+      if (result.errors.length > 0) {
+        showToast(`✗ ${result.errors[0]}`);
+      }
+      setShowImport(false);
+      setPreview(null);
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <div style={cardSt()}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+        <span>📤</span> Import Data
+      </div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+        <select value={importType} onChange={e=>setImportType(e.target.value)} style={selSt({fontSize:13})}>
+          <option value="employees">Import Employees</option>
+          <option value="holidays">Import Holidays</option>
+        </select>
+        <BtnPri onClick={()=>setShowImport(true)} style={{fontSize:13}}>Choose file…</BtnPri>
+        <Btn onClick={()=>{
+          if (importType === 'employees') downloadEmployeeTemplate();
+          else downloadHolidayTemplate();
+        }} style={{fontSize:13}}>📋 Template</Btn>
+      </div>
+
+      {showImport && (
+        <Overlay onClick={()=>setShowImport(false)}>
+          <ModalBox onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:16,fontWeight:600,marginBottom:16}}>Import {importType}</div>
+            
+            <input type="file" accept=".csv" onChange={handleFileSelect} style={{marginBottom:16,display:"block"}}/>
+
+            {preview && (
+              <div style={{marginBottom:16}}>
+                <Alert type={preview.errors.length === 0 ? 'info' : 'error'}>
+                  Valid: {preview.summary.valid} | Errors: {preview.summary.errors} | Duplicates: {preview.summary.duplicates}
+                </Alert>
+
+                {preview.valid.length > 0 && (
+                  <div style={{marginTop:12}}>
+                    <Lbl>Duplicate handling</Lbl>
+                    <select value={action} onChange={e=>setAction(e.target.value)} style={selSt({fontSize:13})}>
+                      <option value="skip">Skip duplicates</option>
+                      <option value="overwrite">Overwrite duplicates</option>
+                    </select>
+                  </div>
+                )}
+
+                {preview.errors.length > 0 && (
+                  <div style={{maxHeight:150,overflowY:"auto",marginTop:12,padding:10,background:"#fee2e2",borderRadius:6}}>
+                    {preview.errors.map((err, idx) => (
+                      <div key={idx} style={{fontSize:12,color:"#991b1b",marginBottom:6}}>
+                        Line {err.row}: {err.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {preview.duplicates.length > 0 && (
+                  <div style={{maxHeight:100,overflowY:"auto",marginTop:12,padding:10,background:"#fffbeb",borderRadius:6}}>
+                    {preview.duplicates.map((dup, idx) => (
+                      <div key={idx} style={{fontSize:12,color:"#92400e"}}>
+                        {dup.name} (line {dup.row})
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{display:"flex",gap:8,marginTop:16}}>
+              <BtnPri onClick={handleImport} disabled={!preview || importing}>
+                {importing ? "Importing..." : "Import"}
+              </BtnPri>
+              <Btn onClick={()=>setShowImport(false)}>Cancel</Btn>
+            </div>
+          </ModalBox>
+        </Overlay>
+      )}
+    </div>
+  );
+}
+
+// ── Certifications section (from original) ─────────────────────────────────
 function CertificationsSection({ employees, certifications, setCertifications, showToast, supabase }) {
   const [filterEmp, setFilterEmp] = useState("all");
   const [showForm, setShowForm]   = useState(false);
@@ -54,10 +622,10 @@ function CertificationsSection({ employees, certifications, setCertifications, s
   }
 
   return (
-    <div>
+    <div style={cardSt()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <SecTitle>Certifications</SecTitle>
+          <SecTitle>🎓 Certifications</SecTitle>
           <select value={filterEmp} onChange={e=>setFilterEmp(e.target.value)} style={selSt({fontSize:13,padding:"6px 10px"})}>
             <option value="all">All employees</option>
             {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
@@ -95,12 +663,7 @@ function CertificationsSection({ employees, certifications, setCertifications, s
         </div>
       )}
 
-      {/* Expiry alerts */}
-      {certifications.filter(c=>{
-        if(!c.expiry_date) return false;
-        const diff=Math.floor((new Date(c.expiry_date)-new Date())/86400000);
-        return diff < 30;
-      }).length > 0 && (
+      {certifications.filter(c=>{if(!c.expiry_date)return false;const diff=Math.floor((new Date(c.expiry_date)-new Date())/86400000);return diff<30;}).length > 0 && (
         <Alert type="warn">
           ⚠ {certifications.filter(c=>{if(!c.expiry_date)return false;const diff=Math.floor((new Date(c.expiry_date)-new Date())/86400000);return diff<30;}).length} certification(s) expiring within 30 days
         </Alert>
@@ -130,135 +693,92 @@ function CertificationsSection({ employees, certifications, setCertifications, s
   );
 }
 
-// ── Shift rules section ────────────────────────────────────────────────────────
-function ShiftRulesSection({ shiftRules, setShiftRules, showToast, supabase }) {
-  const [form, setForm] = useState({ ...shiftRules });
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => { setForm({...shiftRules}); }, [shiftRules]);
-
-  async function saveRules() {
-    const { error } = await supabase.from("shift_rules").upsert({ id:1, ...form });
-    if (error) return showToast(error.message);
-    setShiftRules(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  const field = (key, label, hint) => (
-    <div>
-      <Lbl>{label}</Lbl>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <input type="number" min={0} value={form[key]||0}
-          onChange={e=>setForm(f=>({...f,[key]:parseFloat(e.target.value)||0}))}
-          style={inpSt({width:100})}
-          onFocus={ev=>ev.target.style.borderColor="#4f46e5"}
-          onBlur={ev=>ev.target.style.borderColor="#d1d5db"}/>
-        <span style={{fontSize:13,color:"#6b7280"}}>{hint}</span>
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={cardSt()}>
-      <div style={{fontWeight:600,fontSize:15,color:"#111827",marginBottom:16}}>Shift compliance rules</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:16,marginBottom:16}}>
-        {field("overtime_threshold_daily",  "Daily overtime threshold",    "hours/day (e.g. 8)")}
-        {field("overtime_threshold_weekly", "Weekly overtime threshold",   "hours/week (e.g. 38)")}
-        {field("max_hours_per_day",         "Maximum hours per day",       "hard cap (e.g. 10)")}
-        {field("max_hours_per_week",        "Maximum hours per week",      "hard cap (e.g. 50)")}
-        {field("min_break_minutes",         "Minimum break",               "minutes between shifts")}
-      </div>
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <BtnPri onClick={saveRules}>Save rules</BtnPri>
-        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
-      </div>
-      <div style={{marginTop:12,fontSize:13,color:"#6b7280"}}>
-        These rules drive warnings on the Roster tab. They do not block scheduling — they surface compliance issues for review.
-      </div>
-    </div>
-  );
-}
-
-// ── User management section ────────────────────────────────────────────────────
-function UserManagementSection({ employees, userProfiles, setUserProfiles, showToast, supabase }) {
-  async function updateRole(profileId, role) {
-    const { error } = await supabase.from("user_profiles").update({ role }).eq("id", profileId);
-    if (error) return showToast(error.message);
-    setUserProfiles(prev => prev.map(p => p.id === profileId ? {...p, role} : p));
-  }
-
-  async function linkEmployee(profileId, employeeId) {
-    const { error } = await supabase.from("user_profiles").update({ employee_id: employeeId||null }).eq("id", profileId);
-    if (error) return showToast(error.message);
-    setUserProfiles(prev => prev.map(p => p.id === profileId ? {...p, employee_id: employeeId||null} : p));
-  }
-
-  const empName = id => employees.find(e=>e.id===id)?.name || "—";
-
-  return (
-    <div>
-      <SecTitle>User accounts</SecTitle>
-      {userProfiles.length === 0 && (
-        <div style={{fontSize:13,color:"#9ca3af",padding:"24px 0",textAlign:"center"}}>
-          No user accounts yet. Users are created when they sign up via the login page.
-        </div>
-      )}
-      {userProfiles.map(p => (
-        <div key={p.id} style={cardSt({display:"flex",gap:12,alignItems:"center"})}>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>{p.email||p.id.slice(0,8)+"…"}</div>
-            <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>Linked employee: {empName(p.employee_id)}</div>
-          </div>
-          <select value={p.role} onChange={e=>updateRole(p.id, e.target.value)}
-            style={selSt({fontSize:13,padding:"6px 10px"})}>
-            <option value="employee">Employee</option>
-            <option value="manager">Manager</option>
-            <option value="admin">Admin</option>
-          </select>
-          <select value={p.employee_id||""} onChange={e=>linkEmployee(p.id, e.target.value)}
-            style={selSt({fontSize:13,padding:"6px 10px"})}>
-            <option value="">No employee linked</option>
-            {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Main SettingsTab ──────────────────────────────────────────────────────────
+// ── Main Settings Tab ──────────────────────────────────────────────────────
 export default function SettingsTab({
-  employees,
+  employees, setEmployees,
   certifications, setCertifications,
   shiftRules, setShiftRules,
   userProfiles, setUserProfiles,
+  assignments,
+  projects,
   showToast,
   supabase,
+  year, month,
 }) {
-  const [section, setSection] = useState("rules");
-  const sections = [["rules","Shift rules"],["certs","Certifications"],["users","Users"]];
+  const { getSetting, setSetting, updateBulk } = useSettings();
+  const [expandedSections, setExpandedSections] = useState({
+    organization: true,
+    business: true,
+    defaults: true,
+    calendar: true,
+    export: false,
+    import: false,
+    certifications: false,
+  });
+
+  const toggleSection = (key) => {
+    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const CollapsibleSection = ({ title, icon, sectionKey, children }) => (
+    <div style={{marginBottom:20}}>
+      <button type="button" onClick={()=>toggleSection(sectionKey)}
+        style={{
+          width:"100%",
+          padding:"14px 16px",
+          background:"#f9fafb",
+          border:"1px solid #e5e7eb",
+          borderRadius:8,
+          display:"flex",
+          justifyContent:"space-between",
+          alignItems:"center",
+          cursor:"pointer",
+          fontSize:14,
+          fontWeight:600,
+          color:"#111827",
+        }}>
+        <span style={{display:"flex",alignItems:"center",gap:8}}>
+          <span>{icon}</span> {title}
+        </span>
+        <span style={{fontSize:18,transform: expandedSections[sectionKey] ? "rotate(0deg)" : "rotate(-90deg)",transition:"transform 0.2s"}}>⌄</span>
+      </button>
+      {expandedSections[sectionKey] && (
+        <div style={{marginTop:12}}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div>
-      <div style={{display:"flex",gap:0,border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden",width:"fit-content",marginBottom:20}}>
-        {sections.map(([v,label])=>(
-          <button key={v} type="button" onClick={()=>setSection(v)}
-            style={{padding:"9px 18px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:section===v?"#4f46e5":"#fff",color:section===v?"#fff":"#374151"}}>
-            {label}
-          </button>
-        ))}
-      </div>
+      <CollapsibleSection title="Organization" icon="🏢" sectionKey="organization">
+        <OrganizationSection getSetting={getSetting} setSetting={setSetting} showToast={showToast} supabase={supabase}/>
+      </CollapsibleSection>
 
-      {section==="rules" && (
-        <ShiftRulesSection shiftRules={shiftRules} setShiftRules={setShiftRules} showToast={showToast} supabase={supabase}/>
-      )}
-      {section==="certs" && (
+      <CollapsibleSection title="Business Rules" icon="⚙️" sectionKey="business">
+        <BusinessRulesSection getSetting={getSetting} setSetting={setSetting} showToast={showToast}/>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Defaults" icon="📋" sectionKey="defaults">
+        <DefaultsSection getSetting={getSetting} setSetting={setSetting} showToast={showToast}/>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Calendar & Regional" icon="📅" sectionKey="calendar">
+        <CalendarSection getSetting={getSetting} setSetting={setSetting} showToast={showToast}/>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Export Data" icon="📥" sectionKey="export">
+        <ExportSection employees={employees} projects={projects} assignments={assignments} year={year} month={month} showToast={showToast}/>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Import Data" icon="📤" sectionKey="import">
+        <ImportSection employees={employees} setEmployees={setEmployees} showToast={showToast} supabase={supabase}/>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Certifications" icon="🎓" sectionKey="certifications">
         <CertificationsSection employees={employees} certifications={certifications} setCertifications={setCertifications} showToast={showToast} supabase={supabase}/>
-      )}
-      {section==="users" && (
-        <UserManagementSection employees={employees} userProfiles={userProfiles} setUserProfiles={setUserProfiles} showToast={showToast} supabase={supabase}/>
-      )}
+      </CollapsibleSection>
     </div>
   );
 }

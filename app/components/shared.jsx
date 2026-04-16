@@ -113,3 +113,149 @@ export function Alert({type="warn",children}) {
   const s=styles[type];
   return <div style={{padding:"10px 14px",borderRadius:8,background:s.bg,border:`1.5px solid ${s.border}`,color:s.col,fontSize:13,marginBottom:10}}>{children}</div>;
 }
+
+// ── Toast Notification System ──────────────────────────────────────────────
+
+import { useState, useCallback, useEffect } from 'react';
+
+export function useToast() {
+  const [toasts, setToasts] = useState([]);
+
+  const add = useCallback((toast) => {
+    const id = toast.id || Math.random().toString(36).slice(2);
+    const duration = toast.duration || 5000;
+
+    setToasts(prev => [...prev, { ...toast, id }]);
+
+    if (duration > 0) {
+      const timeout = setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, duration);
+
+      return () => clearTimeout(timeout);
+    }
+  }, []);
+
+  const remove = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const clear = useCallback(() => {
+    setToasts([]);
+  }, []);
+
+  return { toasts, add, remove, clear };
+}
+
+export function Toast({ toast, onClose }) {
+  const styles = {
+    success: { bg: '#dcfce7', border: '#86efac', col: '#166534', icon: '✓' },
+    error:   { bg: '#fee2e2', border: '#fecaca', col: '#dc2626', icon: '✕' },
+    info:    { bg: '#dbeafe', border: '#93c5fd', col: '#1e40af', icon: 'ℹ' },
+    warning: { bg: '#fef3c7', border: '#fcd34d', col: '#92400e', icon: '⚠' }
+  };
+
+  const s = styles[toast.type || 'info'];
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12,
+      padding: '12px 16px',
+      background: s.bg,
+      border: `1.5px solid ${s.border}`,
+      borderRadius: 8,
+      color: s.col,
+      fontSize: 14,
+      marginBottom: 10,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      animation: 'slideIn 0.3s ease-out'
+    }}>
+      <div style={{ fontSize: 16, fontWeight: 'bold', flexShrink: 0, marginTop: 2 }}>
+        {s.icon}
+      </div>
+      <div style={{ flex: 1 }}>
+        {toast.title && (
+          <div style={{ fontWeight: 600, marginBottom: toast.message ? 2 : 0 }}>
+            {toast.title}
+          </div>
+        )}
+        {toast.message && (
+          <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+            {toast.message}
+          </div>
+        )}
+      </div>
+      {toast.action && (
+        <button
+          onClick={() => {
+            toast.action.onClick?.();
+            onClose();
+          }}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: s.col,
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '2px 8px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}
+        >
+          {toast.action.label}
+        </button>
+      )}
+      <button
+        onClick={onClose}
+        style={{
+          background: 'none',
+          border: 'none',
+          color: s.col,
+          cursor: 'pointer',
+          fontSize: 16,
+          padding: '0 4px',
+          opacity: 0.6,
+          flexShrink: 0
+        }}
+      >
+        ✕
+      </button>
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export function ToastContainer({ toasts, onClose }) {
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 20,
+      right: 20,
+      zIndex: 1000,
+      maxWidth: 400,
+      pointerEvents: 'auto'
+    }}>
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          toast={toast}
+          onClose={() => onClose(toast.id)}
+        />
+      ))}
+    </div>
+  );
+}
