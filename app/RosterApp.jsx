@@ -177,18 +177,20 @@ function StrBtn({label,active,onClick}) {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [tab,setTab]         = useState("Projects");
-  const [projects,setProj]   = useState([]);
-  const [employees,setEmps]  = useState([]);
-  const [rYear,setRYear]     = useState(NOW.getFullYear());
-  const [rMonth,setRMo]      = useState(NOW.getMonth());
-  const [assigns,setAssigns] = useState({});
-  const [dayEd,setDayEd]     = useState(null);
-  const [projMod,setProjMod] = useState(null);
-  const [empMod,setEmpMod]   = useState(null);
-  const [pTick,setPTick]     = useState(0);
-  const [eTick,setETick]     = useState(0);
-  const [loading,setLoading] = useState(true);
+  const [tab,setTab]          = useState("Projects");
+  const [projects,setProj]    = useState([]);
+  const [employees,setEmps]   = useState([]);
+  const [rYear,setRYear]      = useState(NOW.getFullYear());
+  const [rMonth,setRMo]       = useState(NOW.getMonth());
+  const [assigns,setAssigns]  = useState({});
+  const [dayEd,setDayEd]      = useState(null);
+  const [projMod,setProjMod]  = useState(null);
+  const [empMod,setEmpMod]    = useState(null);
+  const [pTick,setPTick]      = useState(0);
+  const [eTick,setETick]      = useState(0);
+  const [loading,setLoading]  = useState(true);
+  const [toast,setToast]      = useState(null);
+  const [rosterView,setRView] = useState("calendar");
   const pRef = useRef(null);
   const eRef = useRef(null);
 
@@ -209,6 +211,8 @@ export default function App() {
       setLoading(false);
     })();
   },[]);
+
+  function showToast(msg) { setToast(msg); setTimeout(()=>setToast(null),4000); }
 
   const mkProj = useCallback(()=>({
     id:"", name:"", client:"", color:PROJ_COLORS[0], notes:"",
@@ -235,14 +239,14 @@ export default function App() {
     const s={...p,id:p.id||uid()};
     setProj(prev=>p.id?prev.map(x=>x.id===s.id?s:x):[...prev,s]);
     setProjMod(null); pRef.current=null;
-    supabase.from('projects').upsert(projToRow(s)).then();
+    supabase.from('projects').upsert(projToRow(s)).then(({error})=>{if(error)showToast(error.message);});
   }
   function saveEmp() {
     const e=eRef.current; if(!e||!e.name.trim()) return;
     const s={...e,id:e.id||uid()};
     setEmps(prev=>e.id?prev.map(x=>x.id===s.id?s:x):[...prev,s]);
     setEmpMod(null); eRef.current=null;
-    supabase.from('employees').upsert(empToRow(s)).then();
+    supabase.from('employees').upsert(empToRow(s)).then(({error})=>{if(error)showToast(error.message);});
   }
 
   // assignments
@@ -250,8 +254,8 @@ export default function App() {
   const getA=(y,m,d,eId)=>assigns[aKey(y,m,d,eId)];
   function setA(y,m,d,eId,pid) {
     setAssigns(prev=>{const n={...prev};if(pid===null)delete n[aKey(y,m,d,eId)];else n[aKey(y,m,d,eId)]=pid;return n;});
-    if(pid===null) supabase.from('assignments').delete().match({year:y,month:m,day:d,employee_id:eId}).then();
-    else supabase.from('assignments').upsert({year:y,month:m,day:d,employee_id:eId,project_id:pid}).then();
+    if(pid===null) supabase.from('assignments').delete().match({year:y,month:m,day:d,employee_id:eId}).then(({error})=>{if(error)showToast(error.message);});
+    else supabase.from('assignments').upsert({year:y,month:m,day:d,employee_id:eId,project_id:pid}).then(({error})=>{if(error)showToast(error.message);});
   }
 
   const calDays=useMemo(()=>Array.from({length:daysInMo(rYear,rMonth)},(_,i)=>i+1),[rYear,rMonth]);
@@ -266,97 +270,106 @@ export default function App() {
   const projNameOf=id=>projects.find(p=>p.id===id)?.name||"";
 
   function clearMonth() {
+    if(!window.confirm(`Clear all assignments for ${MONTHS[rMonth]} ${rYear}?`)) return;
     const pre=`${rYear}-${rMonth}-`;
     setAssigns(p=>{const n={...p};Object.keys(n).forEach(k=>{if(k.startsWith(pre))delete n[k];});return n;});
-    supabase.from('assignments').delete().eq('year',rYear).eq('month',rMonth).then();
+    supabase.from('assignments').delete().eq('year',rYear).eq('month',rMonth).then(({error})=>{if(error)showToast(error.message);});
+  }
+
+  // Bulk-assign one employee to one project for all their available unscheduled weekdays this month
+  function bulkAssignEmpToProj(eId,pid) {
+    const e=employees.find(x=>x.id===eId); if(!e) return;
+    const newKeys=[],rows=[];
+    calDays.forEach(d=>{
+      if(isWknd(rYear,rMonth,d)) return;
+      const dl=dlabel(rYear,rMonth,d);
+      if(!e.availability[dl]||getA(rYear,rMonth,d,eId)) return;
+      newKeys.push([aKey(rYear,rMonth,d,eId),pid]);
+      rows.push({year:rYear,month:rMonth,day:d,employee_id:eId,project_id:pid});
+    });
+    if(!newKeys.length) return;
+    setAssigns(prev=>{const n={...prev};newKeys.forEach(([k,p])=>{n[k]=p;});return n;});
+    supabase.from('assignments').upsert(rows).then(({error})=>{if(error)showToast(error.message);});
   }
 
   function autoGenerate() {
     const pre=`${rYear}-${rMonth}-`;
     const newA={};
     Object.keys(assigns).forEach(k=>{if(!k.startsWith(pre))newA[k]=assigns[k];});
-    const targets={},filled={};
+    const targets={},filled={},empH={};
     projects.forEach(p=>{targets[p.id]=monthAllocH(p,rYear,rMonth);filled[p.id]=0;});
+    employees.forEach(e=>{empH[e.id]=0;});
+    // skill overlap count between employee and project
+    const skillMatch=(e,p)=>p.strengthsRequired?.length
+      ?e.strengths.filter(s=>p.strengthsRequired.includes(s)).length:0;
     calDays.forEach(d=>{
       if(isWknd(rYear,rMonth,d)) return;
       const dl=dlabel(rYear,rMonth,d);
-      // fixed projects first
+      // fixed-headcount projects first, skill-sorted, capacity-capped
       projects.filter(p=>p.staffMode==="fixed"&&p.fixedStaff).forEach(p=>{
         const need=parseInt(p.fixedStaff);
-        const avail=employees.filter(e=>e.availability[dl]&&!newA[aKey(rYear,rMonth,d,e.id)]);
-        avail.slice(0,need).forEach(e=>{ newA[aKey(rYear,rMonth,d,e.id)]=p.id; filled[p.id]+=HPD; });
+        const avail=employees
+          .filter(e=>e.availability[dl]&&!newA[aKey(rYear,rMonth,d,e.id)]&&empH[e.id]+HPD<=e.maxHoursPerMonth)
+          .sort((a,b)=>skillMatch(b,p)-skillMatch(a,p));
+        avail.slice(0,need).forEach(e=>{newA[aKey(rYear,rMonth,d,e.id)]=p.id;filled[p.id]+=HPD;empH[e.id]+=HPD;});
       });
-      // flexible projects
-      employees.filter(e=>e.availability[dl]&&!newA[aKey(rYear,rMonth,d,e.id)]).forEach(e=>{
-        let bestP=null,bestGap=-Infinity;
-        projects.filter(p=>p.staffMode!=="fixed").forEach(p=>{const gap=targets[p.id]-filled[p.id];if(gap>0&&gap>bestGap){bestGap=gap;bestP=p;}});
-        if(bestP){newA[aKey(rYear,rMonth,d,e.id)]=bestP.id;filled[bestP.id]+=HPD;}
-      });
+      // flexible projects: skill match is primary signal, gap is tiebreaker
+      employees
+        .filter(e=>e.availability[dl]&&!newA[aKey(rYear,rMonth,d,e.id)]&&empH[e.id]+HPD<=e.maxHoursPerMonth)
+        .forEach(e=>{
+          let bestP=null,bestScore=-Infinity;
+          projects.filter(p=>p.staffMode!=="fixed").forEach(p=>{
+            const gap=targets[p.id]-filled[p.id];
+            if(gap<=0) return;
+            const score=skillMatch(e,p)*1000+gap;
+            if(score>bestScore){bestScore=score;bestP=p;}
+          });
+          if(bestP){newA[aKey(rYear,rMonth,d,e.id)]=bestP.id;filled[bestP.id]+=HPD;empH[e.id]+=HPD;}
+        });
     });
     setAssigns(newA);
-    // Sync to DB: clear month then batch-insert new assignments
     const rows=Object.entries(newA)
       .filter(([k])=>k.startsWith(`${rYear}-${rMonth}-`))
       .map(([k,pid])=>{const[y,m,d,eId]=k.split('-');return{year:+y,month:+m,day:+d,employee_id:eId,project_id:pid};});
     supabase.from('assignments').delete().eq('year',rYear).eq('month',rMonth)
-      .then(()=>rows.length&&supabase.from('assignments').insert(rows).then());
+      .then(()=>rows.length&&supabase.from('assignments').insert(rows).then(({error})=>{if(error)showToast(error.message);}));
   }
 
+  const YEARS = Array.from({length:6},(_,i)=>NOW.getFullYear()-1+i);
   const MonthSel=({val,set})=><select value={val} onChange={e=>set(+e.target.value)} style={selSt({width:"auto"})}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>;
-  const YearSel=({val,set})=><select value={val} onChange={e=>set(+e.target.value)} style={selSt({width:"auto"})}>{[2024,2025,2026,2027,2028].map(y=><option key={y}>{y}</option>)}</select>;
+  const YearSel=({val,set})=><select value={val} onChange={e=>set(+e.target.value)} style={selSt({width:"auto"})}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>;
 
   // ── PROJECT MODAL ────────────────────────────────────────────────────────────
   function ProjectModal() {
     const p=pRef.current; if(!p) return null;
-    const months=getProjectMonths(p);
-    const [name,setName]         = useState(p.name);
-    const [client,setClient]     = useState(p.client);
-    const [budget,setBudget]     = useState(p.budget);
-    const [cor,setCor]           = useState(p.chargeOutRate||"");
-    const [totalInput,setTI]     = useState(p.totalInput||"");
-    const [totalUnit,setTU]      = useState(p.totalUnit||"days");
-    const [staffMode,setSM]      = useState(p.staffMode||"flexible");
-    const [fixedStaff,setFS]     = useState(p.fixedStaff||"");
-    const [color,setColor]       = useState(p.color);
-    const [strengths,setStr]     = useState([...(p.strengthsRequired||[])]);
-    const [sm,setSm]             = useState(p.startMonth);
-    const [sy,setSy]             = useState(p.startYear);
-    const [em,setEm]             = useState(p.endMonth);
-    const [ey,setEy]             = useState(p.endYear);
-    const [hours,setHours]       = useState({...p.monthlyHours});
-    const [notes,setNotes]       = useState(p.notes);
-    const [,rerender]            = useState(0);
-
+    const [name,setName]     = useState(p.name);
+    const [client,setClient] = useState(p.client);
+    const [budget,setBudget] = useState(p.budget);
+    const [cor,setCor]       = useState(p.chargeOutRate||"");
+    const [totalInput,setTI] = useState(p.totalInput||"");
+    const [totalUnit,setTU]  = useState(p.totalUnit||"days");
+    const [staffMode,setSM]  = useState(p.staffMode||"flexible");
+    const [fixedStaff,setFS] = useState(p.fixedStaff||"");
+    const [color,setColor]   = useState(p.color);
+    const [strengths,setStr] = useState([...(p.strengthsRequired||[])]);
+    const [sm,setSm]         = useState(p.startMonth);
+    const [sy,setSy]         = useState(p.startYear);
+    const [em,setEm]         = useState(p.endMonth);
+    const [ey,setEy]         = useState(p.endYear);
+    const [hours,setHours]   = useState({...p.monthlyHours});
+    const [notes,setNotes]   = useState(p.notes);
+    const [,rerender]        = useState(0);
     const sync=patch=>Object.assign(pRef.current,patch);
-
     const localMonths=getProjectMonths({startMonth:sm,startYear:sy,endMonth:em,endYear:ey});
     const budH=totalBudgetHours({budget,chargeOutRate:cor});
     const totalAllocH=localMonths.reduce((a,{y,m})=>{const k=pmKey(y,m);return a+(hours[k]!==undefined?hours[k]:wdInMonth(y,m)*HPD);},0);
     const tH=totalInputHours({totalInput,totalUnit});
     const diff=tH!==null?totalAllocH-tH:null;
-
-    function doSpread() {
-      const spread=spreadAcrossMonths({...pRef.current,totalInput,totalUnit});
-      setHours(spread); sync({monthlyHours:spread}); rerender(r=>r+1);
-    }
-    function setMonthVal(key,raw) {
-      const v=parseFloat(raw)||0;
-      const stored=totalUnit==="hours"?v:v*HPD;
-      const next={...hours,[key]:stored};
-      setHours(next); sync({monthlyHours:next});
-    }
-    function clearMonthVal(key) {
-      const next={...hours}; delete next[key];
-      setHours(next); sync({monthlyHours:next});
-    }
-    function switchUnit(u) {
-      setTU(u); sync({totalUnit:u});
-      const spread=spreadAcrossMonths({...pRef.current,totalUnit:u});
-      if (Object.keys(spread).length) { setHours(spread); sync({monthlyHours:spread}); }
-      rerender(r=>r+1);
-    }
+    function doSpread() { const s=spreadAcrossMonths({...pRef.current,totalInput,totalUnit});setHours(s);sync({monthlyHours:s});rerender(r=>r+1); }
+    function setMonthVal(key,raw) { const v=parseFloat(raw)||0;const stored=totalUnit==="hours"?v:v*HPD;const next={...hours,[key]:stored};setHours(next);sync({monthlyHours:next}); }
+    function clearMonthVal(key) { const next={...hours};delete next[key];setHours(next);sync({monthlyHours:next}); }
+    function switchUnit(u) { setTU(u);sync({totalUnit:u});const s=spreadAcrossMonths({...pRef.current,totalUnit:u});if(Object.keys(s).length){setHours(s);sync({monthlyHours:s});}rerender(r=>r+1); }
     const close=()=>{setProjMod(null);pRef.current=null;};
-
     return (
       <Overlay onClose={close}>
         <ModalBox>
@@ -365,31 +378,24 @@ export default function App() {
             <Btn onClick={close}>Cancel</Btn>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
-
             <Row2>
               <div><Lbl>Project name *</Lbl><FocusInp value={name} placeholder="e.g. Riverside Park" onChange={e=>{setName(e.target.value);sync({name:e.target.value});}}/></div>
               <div><Lbl>Client</Lbl><FocusInp value={client} placeholder="e.g. City Council" onChange={e=>{setClient(e.target.value);sync({client:e.target.value});}}/></div>
             </Row2>
-
             <Row2>
               <div><Lbl>Total budget ($)</Lbl><FocusInp type="number" value={budget} placeholder="e.g. 250000" onChange={e=>{setBudget(e.target.value);sync({budget:e.target.value});rerender(r=>r+1);}}/></div>
               <div><Lbl>Charge-out rate ($/hr)</Lbl><FocusInp type="number" value={cor} placeholder="e.g. 85" onChange={e=>{setCor(e.target.value);sync({chargeOutRate:e.target.value});rerender(r=>r+1);}}/></div>
             </Row2>
-
-            {/* Total allocation input + unit toggle */}
             <div>
               <Lbl>Total project allocation</Lbl>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <FocusInp type="number" value={totalInput} placeholder={totalUnit==="days"?"e.g. 45":"e.g. 360"}
-                  style={{flex:1,width:"auto"}}
+                <FocusInp type="number" value={totalInput} placeholder={totalUnit==="days"?"e.g. 45":"e.g. 360"} style={{flex:1,width:"auto"}}
                   onChange={e=>{setTI(e.target.value);sync({totalInput:e.target.value});rerender(r=>r+1);}}/>
                 <ToggleBtn options={[["days","Days"],["hours","Hours"]]} value={totalUnit} onChange={switchUnit}/>
               </div>
               {totalInput&&parseFloat(totalInput)>0&&(
                 <div style={{marginTop:5,fontSize:12,color:"#6b7280"}}>
-                  {totalUnit==="days"
-                    ? <>= <b style={{color:"#111827"}}>{parseFloat(totalInput)*HPD}h</b> total</>
-                    : <>= <b style={{color:"#111827"}}>{(parseFloat(totalInput)/HPD).toFixed(1)} days</b> equiv</>}
+                  {totalUnit==="days"?<>= <b style={{color:"#111827"}}>{parseFloat(totalInput)*HPD}h</b> total</>:<>= <b style={{color:"#111827"}}>{(parseFloat(totalInput)/HPD).toFixed(1)} days</b> equiv</>}
                 </div>
               )}
               {budget&&cor&&parseFloat(budget)>0&&parseFloat(cor)>0&&(
@@ -398,34 +404,25 @@ export default function App() {
                 </div>
               )}
             </div>
-
-            {/* Staff requirement */}
             <div>
               <Lbl>Daily staff requirement</Lbl>
-              <ToggleBtn options={[["flexible","Flexible"],["fixed","Fixed team size"]]} value={staffMode}
-                onChange={v=>{setSM(v);sync({staffMode:v});}}/>
+              <ToggleBtn options={[["flexible","Flexible"],["fixed","Fixed team size"]]} value={staffMode} onChange={v=>{setSM(v);sync({staffMode:v});}}/>
               <div style={{marginTop:10}}>
                 {staffMode==="flexible"
-                  ? <div style={{fontSize:13,color:"#6b7280",padding:"10px 14px",background:"#f9fafb",border:"1.5px solid #e5e7eb",borderRadius:8}}>Staff can vary day to day — assign whoever is needed when building the roster.</div>
-                  : <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#eff6ff",border:"1.5px solid #bfdbfe",borderRadius:8}}>
-                      <span style={{fontSize:13,color:"#1d4ed8",whiteSpace:"nowrap"}}>Exactly</span>
-                      <FocusInp type="number" value={fixedStaff} placeholder="e.g. 4" style={{width:80,textAlign:"center"}}
-                        onChange={e=>{setFS(e.target.value);sync({fixedStaff:e.target.value});}}/>
-                      <span style={{fontSize:13,color:"#1d4ed8"}}>staff required on site every day.</span>
-                    </div>
-                }
+                  ?<div style={{fontSize:13,color:"#6b7280",padding:"10px 14px",background:"#f9fafb",border:"1.5px solid #e5e7eb",borderRadius:8}}>Staff can vary day to day — assign whoever is needed when building the roster.</div>
+                  :<div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#eff6ff",border:"1.5px solid #bfdbfe",borderRadius:8}}>
+                    <span style={{fontSize:13,color:"#1d4ed8",whiteSpace:"nowrap"}}>Exactly</span>
+                    <FocusInp type="number" value={fixedStaff} placeholder="e.g. 4" style={{width:80,textAlign:"center"}} onChange={e=>{setFS(e.target.value);sync({fixedStaff:e.target.value});}}/>
+                    <span style={{fontSize:13,color:"#1d4ed8"}}>staff required on site every day.</span>
+                  </div>}
               </div>
             </div>
-
-            {/* Colour */}
             <div>
               <Lbl>Project colour</Lbl>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {PROJ_COLORS.map(c=><button key={c} type="button" onClick={()=>{setColor(c);sync({color:c});}} style={{width:28,height:28,borderRadius:"50%",background:c,border:color===c?"3px solid #111827":"2px solid transparent",cursor:"pointer"}}/>)}
               </div>
             </div>
-
-            {/* Strengths */}
             <div>
               <Lbl>Strengths required</Lbl>
               <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:10,border:"1.5px solid #e5e7eb",borderRadius:8,background:"#fafafa"}}>
@@ -435,74 +432,66 @@ export default function App() {
                 ))}
               </div>
             </div>
-
-            {/* Dates */}
             <div>
               <Lbl>Project dates</Lbl>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 20px 1fr 1fr",gap:8,alignItems:"center"}}>
                 <select style={selSt({width:"100%"})} value={sm} onChange={e=>{setSm(e.target.value);sync({startMonth:e.target.value});rerender(r=>r+1);}}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>
-                <select style={selSt({width:"100%"})} value={sy} onChange={e=>{setSy(e.target.value);sync({startYear:e.target.value});rerender(r=>r+1);}}>{[2024,2025,2026,2027,2028,2029].map(y=><option key={y}>{y}</option>)}</select>
+                <select style={selSt({width:"100%"})} value={sy} onChange={e=>{setSy(e.target.value);sync({startYear:e.target.value});rerender(r=>r+1);}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
                 <span style={{textAlign:"center",color:"#9ca3af"}}>→</span>
                 <select style={selSt({width:"100%"})} value={em} onChange={e=>{setEm(e.target.value);sync({endMonth:e.target.value});rerender(r=>r+1);}}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>
-                <select style={selSt({width:"100%"})} value={ey} onChange={e=>{setEy(e.target.value);sync({endYear:e.target.value});rerender(r=>r+1);}}>{[2024,2025,2026,2027,2028,2029].map(y=><option key={y}>{y}</option>)}</select>
+                <select style={selSt({width:"100%"})} value={ey} onChange={e=>{setEy(e.target.value);sync({endYear:e.target.value});rerender(r=>r+1);}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
               </div>
             </div>
-
-            {/* Monthly allocation */}
             {localMonths.length===0
-              ? <p style={{fontSize:13,color:"#9ca3af",margin:0}}>Set project dates above to configure monthly allocations.</p>
-              : <div>
-                  <Lbl>Monthly allocation ({totalUnit})</Lbl>
-                  {/* summary bar */}
-                  <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:10,padding:"10px 14px",background:"#f9fafb",border:"1.5px solid #e5e7eb",borderRadius:8}}>
-                    {tH&&<span style={{fontSize:13,color:"#374151"}}>Target: <b style={{color:"#111827"}}>{totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`}</b></span>}
-                    <span style={{fontSize:13,color:"#374151"}}>Allocated: <b style={{color:"#111827"}}>{totalUnit==="hours"?fmtH(totalAllocH):`${Math.round(totalAllocH/HPD)}d`}</b></span>
-                    {diff!==null&&<span style={{fontSize:13,fontWeight:600,color:diff>0.5?"#dc2626":diff<-0.5?"#d97706":"#059669"}}>
-                      {diff>0.5?`+${totalUnit==="hours"?fmtH(diff):`${Math.round(diff/HPD)}d`} over`:diff<-0.5?`${totalUnit==="hours"?fmtH(Math.abs(diff)):`${Math.round(Math.abs(diff)/HPD)}d`} unallocated`:"✓ Fully allocated"}
-                    </span>}
-                  </div>
-                  <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
-                    <Btn style={{fontSize:12,padding:"6px 12px"}} onClick={doSpread}>
-                      {tH?`Spread ${totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`} across months`:"Auto-fill working "+totalUnit}
-                    </Btn>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:8}}>
-                    {localMonths.map(({y,m})=>{
-                      const key=pmKey(y,m);
-                      const wd=wdInMonth(y,m);
-                      const hasOv=hours[key]!==undefined;
-                      const stored=hasOv?hours[key]:wd*HPD;
-                      const isH=totalUnit==="hours";
-                      const displayVal=isH?Math.round(stored*10)/10:Math.round(stored/HPD);
-                      const mb=monthBudgetSlice({...pRef.current,startMonth:sm,startYear:sy,endMonth:em,endYear:ey},y,m);
-                      const mRev=cor&&parseFloat(cor)>0?stored*parseFloat(cor):null;
-                      return (
-                        <div key={key} style={{background:hasOv?"#fffbeb":"#f9fafb",border:`1.5px solid ${hasOv?"#fcd34d":"#e5e7eb"}`,borderRadius:8,padding:"10px 12px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
-                            <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>{MONTHS[m].slice(0,3)} {y}</span>
-                            {hasOv&&<span style={{fontSize:10,color:"#b45309"}}>edited</span>}
-                          </div>
-                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                            <input type="number" min={0} value={displayVal}
-                              style={inpSt({width:64,padding:"6px 8px",textAlign:"center"})}
-                              onChange={e=>setMonthVal(key,e.target.value)}
-                              onFocus={e=>e.target.style.borderColor="#4f46e5"}
-                              onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
-                            <span style={{fontSize:11,color:"#9ca3af"}}>{isH?`h / ${wd*HPD}h`:`d / ${wd}d`}</span>
-                          </div>
-                          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.6}}>
-                            {isH?<div>{(stored/HPD).toFixed(1)}d equiv</div>:<div>{stored}h total</div>}
-                            {mb&&<div>Budget: {fmt$(mb)}</div>}
-                            {mRev&&<div>Revenue: {fmt$(mRev)}</div>}
-                          </div>
-                          {hasOv&&<button type="button" onClick={()=>clearMonthVal(key)} style={{marginTop:5,fontSize:10,color:"#9ca3af",background:"none",border:"none",cursor:"pointer",padding:0}}>↩ reset</button>}
-                        </div>
-                      );
-                    })}
-                  </div>
+              ?<p style={{fontSize:13,color:"#9ca3af",margin:0}}>Set project dates above to configure monthly allocations.</p>
+              :<div>
+                <Lbl>Monthly allocation ({totalUnit})</Lbl>
+                <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:10,padding:"10px 14px",background:"#f9fafb",border:"1.5px solid #e5e7eb",borderRadius:8}}>
+                  {tH&&<span style={{fontSize:13,color:"#374151"}}>Target: <b style={{color:"#111827"}}>{totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`}</b></span>}
+                  <span style={{fontSize:13,color:"#374151"}}>Allocated: <b style={{color:"#111827"}}>{totalUnit==="hours"?fmtH(totalAllocH):`${Math.round(totalAllocH/HPD)}d`}</b></span>
+                  {diff!==null&&<span style={{fontSize:13,fontWeight:600,color:diff>0.5?"#dc2626":diff<-0.5?"#d97706":"#059669"}}>
+                    {diff>0.5?`+${totalUnit==="hours"?fmtH(diff):`${Math.round(diff/HPD)}d`} over`:diff<-0.5?`${totalUnit==="hours"?fmtH(Math.abs(diff)):`${Math.round(Math.abs(diff)/HPD)}d`} unallocated`:"✓ Fully allocated"}
+                  </span>}
                 </div>
+                <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+                  <Btn style={{fontSize:12,padding:"6px 12px"}} onClick={doSpread}>{tH?`Spread ${totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`} across months`:"Auto-fill working "+totalUnit}</Btn>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:8}}>
+                  {localMonths.map(({y,m})=>{
+                    const key=pmKey(y,m);
+                    const wd=wdInMonth(y,m);
+                    const hasOv=hours[key]!==undefined;
+                    const stored=hasOv?hours[key]:wd*HPD;
+                    const isH=totalUnit==="hours";
+                    const displayVal=isH?Math.round(stored*10)/10:Math.round(stored/HPD);
+                    const mb=monthBudgetSlice({...pRef.current,startMonth:sm,startYear:sy,endMonth:em,endYear:ey},y,m);
+                    const mRev=cor&&parseFloat(cor)>0?stored*parseFloat(cor):null;
+                    return (
+                      <div key={key} style={{background:hasOv?"#fffbeb":"#f9fafb",border:`1.5px solid ${hasOv?"#fcd34d":"#e5e7eb"}`,borderRadius:8,padding:"10px 12px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
+                          <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>{MONTHS[m].slice(0,3)} {y}</span>
+                          {hasOv&&<span style={{fontSize:10,color:"#b45309"}}>edited</span>}
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                          <input type="number" min={0} value={displayVal}
+                            style={inpSt({width:64,padding:"6px 8px",textAlign:"center"})}
+                            onChange={e=>setMonthVal(key,e.target.value)}
+                            onFocus={e=>e.target.style.borderColor="#4f46e5"}
+                            onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
+                          <span style={{fontSize:11,color:"#9ca3af"}}>{isH?`h / ${wd*HPD}h`:`d / ${wd}d`}</span>
+                        </div>
+                        <div style={{fontSize:11,color:"#6b7280",lineHeight:1.6}}>
+                          {isH?<div>{(stored/HPD).toFixed(1)}d equiv</div>:<div>{stored}h total</div>}
+                          {mb&&<div>Budget: {fmt$(mb)}</div>}
+                          {mRev&&<div>Revenue: {fmt$(mRev)}</div>}
+                        </div>
+                        {hasOv&&<button type="button" onClick={()=>clearMonthVal(key)} style={{marginTop:5,fontSize:10,color:"#9ca3af",background:"none",border:"none",cursor:"pointer",padding:0}}>↩ reset</button>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             }
-
             <div><Lbl>Notes</Lbl><FocusTxt value={notes} placeholder="Any additional notes..." onChange={e=>{setNotes(e.target.value);sync({notes:e.target.value});}}/></div>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20,paddingTop:16,borderTop:"1px solid #e5e7eb"}}>
@@ -585,9 +574,15 @@ export default function App() {
   // ── DAY EDITOR ───────────────────────────────────────────────────────────────
   function DayEditorModal({day}) {
     const dl=dlabel(rYear,rMonth,day);
-    const assigned  =employees.filter(e=> getA(rYear,rMonth,day,e.id));
-    const available =employees.filter(e=>!getA(rYear,rMonth,day,e.id)&& e.availability[dl]);
-    const unavail   =employees.filter(e=>!getA(rYear,rMonth,day,e.id)&&!e.availability[dl]);
+    const assigned =employees.filter(e=> getA(rYear,rMonth,day,e.id));
+    const available=employees.filter(e=>!getA(rYear,rMonth,day,e.id)&& e.availability[dl]);
+    const unavail  =employees.filter(e=>!getA(rYear,rMonth,day,e.id)&&!e.availability[dl]);
+    // Returns {n, total} if project has requirements, null otherwise
+    const skillMatch=(e,p)=>{
+      const total=p.strengthsRequired?.length||0;
+      if(!total) return null;
+      return {n:e.strengths.filter(s=>p.strengthsRequired.includes(s)).length,total};
+    };
     return (
       <Overlay onClose={()=>setDayEd(null)}>
         <ModalBox maxWidth={540}>
@@ -598,8 +593,6 @@ export default function App() {
             </div>
             <Btn onClick={()=>setDayEd(null)}>Close</Btn>
           </div>
-
-          {/* per-project staff status */}
           {projects.length>0&&(
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
               {projects.map(p=>{
@@ -621,7 +614,6 @@ export default function App() {
               })}
             </div>
           )}
-
           <SecTitle>On site ({assigned.length})</SecTitle>
           {assigned.length===0&&<p style={{fontSize:13,color:"#9ca3af",marginBottom:12}}>No one assigned — add staff below.</p>}
           {assigned.map(e=>{
@@ -640,7 +632,6 @@ export default function App() {
               </div>
             );
           })}
-
           {available.length>0&&(
             <div style={{marginTop:16}}>
               <SecTitle>Available to add ({available.length})</SecTitle>
@@ -651,19 +642,33 @@ export default function App() {
                     <div style={{fontSize:14,fontWeight:500,color:"#111827"}}>{e.name}</div>
                     <div style={{fontSize:12,color:"#6b7280"}}>{e.role}{e.strengths?.length?` · ${e.strengths.slice(0,3).join(", ")}${e.strengths.length>3?` +${e.strengths.length-3}`:""}`:""}</div>
                   </div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
-                    {projects.map(p=>(
-                      <button key={p.id} onClick={()=>setA(rYear,rMonth,day,e.id,p.id)}
-                        style={{padding:"5px 11px",borderRadius:99,border:`1.5px solid ${p.color}`,background:`${p.color}14`,color:p.color,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
-                        + {p.name}
-                      </button>
-                    ))}
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                    {projects.map(p=>{
+                      const sm=skillMatch(e,p);
+                      // skill badge colour: green = full match, amber = partial, red = none
+                      const badgeCol=sm?(sm.n===sm.total?"#059669":sm.n>0?"#d97706":"#dc2626"):null;
+                      return (
+                        <div key={p.id} style={{display:"flex",gap:0}}>
+                          <button
+                            title={`Assign ${e.name} to ${p.name} today`}
+                            onClick={()=>setA(rYear,rMonth,day,e.id,p.id)}
+                            style={{padding:"5px 10px",borderRadius:"8px 0 0 8px",border:`1.5px solid ${p.color}`,borderRight:"none",background:`${p.color}14`,color:badgeCol||p.color,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                            + {p.name}{sm?` ${sm.n}/${sm.total}★`:""}
+                          </button>
+                          <button
+                            title={`Assign ${e.name} to ${p.name} for all available weekdays this month`}
+                            onClick={()=>bulkAssignEmpToProj(e.id,p.id)}
+                            style={{padding:"5px 8px",borderRadius:"0 8px 8px 0",border:`1.5px solid ${p.color}`,background:`${p.color}22`,color:p.color,fontSize:11,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",fontWeight:500}}>
+                            mo↓
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
             </div>
           )}
-
           {unavail.length>0&&(
             <div style={{marginTop:16}}>
               <SecTitle>Unavailable today ({unavail.length})</SecTitle>
@@ -703,9 +708,7 @@ export default function App() {
                     {tH&&<Tag bg="#ecfdf5" col="#065f46">Allocation: {p.totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`}</Tag>}
                     {budH&&!tH&&<Tag bg="#ecfdf5" col="#065f46">Budget: {Math.round(budH/HPD)}d ({Math.round(budH)}h)</Tag>}
                     {months.length>0&&<Tag bg="#fef3c7" col="#92400e">{MONTHS[+p.startMonth].slice(0,3)} {p.startYear} – {MONTHS[+p.endMonth].slice(0,3)} {p.endYear}</Tag>}
-                    {p.staffMode==="fixed"&&p.fixedStaff
-                      ?<Tag bg="#eff6ff" col="#1d4ed8">Fixed: {p.fixedStaff} staff/day</Tag>
-                      :<Tag bg="#f3f4f6" col="#6b7280">Flexible staffing</Tag>}
+                    {p.staffMode==="fixed"&&p.fixedStaff?<Tag bg="#eff6ff" col="#1d4ed8">Fixed: {p.fixedStaff} staff/day</Tag>:<Tag bg="#f3f4f6" col="#6b7280">Flexible staffing</Tag>}
                   </div>
                   {p.strengthsRequired?.length>0&&<div style={{marginTop:6,display:"flex",gap:4,flexWrap:"wrap"}}>{p.strengthsRequired.map(s=><Tag key={s} bg="#ecfdf5" col="#065f46">{s}</Tag>)}</div>}
                   {months.length>0&&(
@@ -728,7 +731,11 @@ export default function App() {
                 </div>
                 <div style={{display:"flex",gap:6,flexShrink:0}}>
                   <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
-                  <BtnDanger onClick={()=>{setProj(prev=>prev.filter(x=>x.id!==p.id));supabase.from('projects').delete().eq('id',p.id).then();}}>Delete</BtnDanger>
+                  <BtnDanger onClick={()=>{
+                    if(!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+                    setProj(prev=>prev.filter(x=>x.id!==p.id));
+                    supabase.from('projects').delete().eq('id',p.id).then(({error})=>{if(error)showToast(error.message);});
+                  }}>Delete</BtnDanger>
                 </div>
               </div>
             </div>
@@ -769,7 +776,11 @@ export default function App() {
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0}}>
                 <Btn onClick={()=>openEmpMod(e)}>Edit</Btn>
-                <BtnDanger onClick={()=>{setEmps(prev=>prev.filter(x=>x.id!==e.id));supabase.from('employees').delete().eq('id',e.id).then();}}>Delete</BtnDanger>
+                <BtnDanger onClick={()=>{
+                  if(!window.confirm(`Delete "${e.name}"? This cannot be undone.`)) return;
+                  setEmps(prev=>prev.filter(x=>x.id!==e.id));
+                  supabase.from('employees').delete().eq('id',e.id).then(({error})=>{if(error)showToast(error.message);});
+                }}>Delete</BtnDanger>
               </div>
             </div>
           </div>
@@ -794,6 +805,14 @@ export default function App() {
           <YearSel  val={rYear}  set={setRYear}/>
           <BtnPri onClick={autoGenerate}>Auto-generate</BtnPri>
           <Btn onClick={clearMonth}>Clear month</Btn>
+          <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden"}}>
+            {[["calendar","Calendar"],["employees","By employee"]].map(([v,label])=>(
+              <button key={v} type="button" onClick={()=>setRView(v)}
+                style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"#4f46e5":"#fff",color:rosterView===v?"#fff":"#374151",whiteSpace:"nowrap"}}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         {projects.length>0&&(
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
@@ -812,7 +831,7 @@ export default function App() {
           </div>
         )}
         {(projects.length===0||employees.length===0)&&<div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"#9ca3af",fontSize:14}}>Add projects and employees first to start building the roster.</div>}
-        {projects.length>0&&employees.length>0&&(
+        {projects.length>0&&employees.length>0&&rosterView==="calendar"&&(
           <div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
               {DAYS_SHORT.map(d=><div key={d} style={{fontSize:12,fontWeight:600,textAlign:"center",color:"#6b7280",padding:"4px 0"}}>{d}</div>)}
@@ -844,6 +863,60 @@ export default function App() {
                 })}
               </div>
             ))}
+          </div>
+        )}
+        {projects.length>0&&employees.length>0&&rosterView==="employees"&&(
+          <div style={{overflowX:"auto"}}>
+            <table style={{borderCollapse:"collapse",fontSize:12,width:"100%"}}>
+              <thead>
+                <tr>
+                  <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",minWidth:140,position:"sticky",left:0,background:"#fff",zIndex:1}}>Employee</th>
+                  {calDays.map(d=>{
+                    const wknd=isWknd(rYear,rMonth,d);
+                    return (
+                      <th key={d} style={{padding:"3px 1px",textAlign:"center",color:wknd?"#d1d5db":"#6b7280",fontWeight:500,borderBottom:"1.5px solid #e5e7eb",minWidth:28}}>
+                        <div style={{fontSize:11}}>{d}</div>
+                        <div style={{fontSize:9,marginTop:1}}>{dlabel(rYear,rMonth,d).slice(0,1)}</div>
+                      </th>
+                    );
+                  })}
+                  <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",whiteSpace:"nowrap",minWidth:80}}>Scheduled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employees.map(e=>{
+                  const sch=empMonthH(e.id);
+                  const pct=e.maxHoursPerMonth>0?Math.round(sch/e.maxHoursPerMonth*100):0;
+                  return (
+                    <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6"}}>
+                      <td style={{padding:"8px 12px",fontWeight:500,color:"#111827",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:"#fff",zIndex:1}}>
+                        <div>{e.name}</div>
+                        <div style={{fontSize:11,color:"#9ca3af",fontWeight:400}}>{e.role}</div>
+                      </td>
+                      {calDays.map(d=>{
+                        const wknd=isWknd(rYear,rMonth,d);
+                        const pid=getA(rYear,rMonth,d,e.id);
+                        const dl2=dlabel(rYear,rMonth,d);
+                        const avail=e.availability[dl2];
+                        return (
+                          <td key={d}
+                            onClick={()=>{ if(!wknd) setDayEd(d); }}
+                            title={pid?`${e.name} → ${projNameOf(pid)}`:undefined}
+                            style={{padding:"3px 1px",textAlign:"center",background:wknd?"#f9fafb":pid?projColor(pid)+"28":"#fff",cursor:wknd?"default":"pointer",borderLeft:"1px solid #f3f4f6"}}>
+                            {pid&&<span style={{display:"block",width:10,height:10,borderRadius:"50%",background:projColor(pid),margin:"0 auto"}}/>}
+                            {!pid&&!wknd&&!avail&&<span style={{color:"#e5e7eb",fontSize:9}}>–</span>}
+                          </td>
+                        );
+                      })}
+                      <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>
+                        <span style={{fontSize:12,fontWeight:600,color:pct>=100?"#dc2626":pct>=80?"#d97706":"#374151"}}>{Math.round(sch/HPD)}d</span>
+                        <span style={{fontSize:11,color:"#9ca3af"}}> / {Math.round(e.maxHoursPerMonth/HPD)}d</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -982,6 +1055,11 @@ export default function App() {
       {dayEd   !== null && <DayEditorModal day={dayEd}/>}
       {projMod !== null && <ProjectModal key={pTick}/>}
       {empMod  !== null && <EmployeeModal key={eTick}/>}
+      {toast&&(
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"#1f2937",color:"#fff",padding:"12px 20px",borderRadius:10,fontSize:13,zIndex:1000,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",maxWidth:400,textAlign:"center",pointerEvents:"none"}}>
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
