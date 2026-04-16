@@ -18,7 +18,7 @@ function PageContent() {
     );
   }
 
-  if (!auth.user && !demoMode) {
+  if (!auth.user) {
     return (
       <AuthScreen 
         auth={auth} 
