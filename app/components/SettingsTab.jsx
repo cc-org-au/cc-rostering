@@ -9,14 +9,14 @@ import {
   SecTitle, Tag, Avatar, Alert,
   StatusBadge,
 } from "./shared";
-import { useSettings } from "../lib/useSettings";
+import { useSettings } from "../../lib/useSettings";
 import {
   exportRoster, exportEmployees, exportProjects, exportTimesheets, exportMonthlyBundle
-} from "../lib/exportData";
+} from "../../lib/exportData";
 import {
   validateEmployeesCSV, applyEmployeeImport, validateHolidayCSV,
   downloadEmployeeTemplate, downloadHolidayTemplate, HOLIDAY_TEMPLATES
-} from "../lib/importData";
+} from "../../lib/importData";
 
 const CERT_NAMES = [
   "First Aid Certificate","CPR Certificate","White Card (Construction Induction)",
@@ -42,7 +42,7 @@ function OrganizationSection({ getSetting, setSetting, showToast, supabase }) {
     setForm({
       org_name: getSetting('org_name') || 'Organization',
       org_logo_url: getSetting('org_logo_url') || '',
-      color: '#4f46e5',
+      color: 'var(--accent)',
     });
   }, [getSetting]);
 
@@ -74,7 +74,7 @@ function OrganizationSection({ getSetting, setSetting, showToast, supabase }) {
         </div>
       </Row2>
       {form.org_logo_url && (
-        <div style={{marginTop:12,padding:12,background:"#f3f4f6",borderRadius:6}}>
+        <div style={{marginTop:12,padding:12,background:"var(--bg-muted)",borderRadius:6}}>
           <img src={form.org_logo_url} style={{maxHeight:80,maxWidth:200}} alt="Logo preview" onError={()=>{}}/>
         </div>
       )}
@@ -163,9 +163,9 @@ function BusinessRulesSection({ getSetting, setSetting, showToast }) {
                 padding:"8px 12px",
                 borderRadius:6,
                 border:"1.5px solid",
-                borderColor: form.weekend_days.includes(idx) ? "#4f46e5" : "#d1d5db",
+                borderColor: form.weekend_days.includes(idx) ? "var(--accent)" : "var(--border-input)",
                 background: form.weekend_days.includes(idx) ? "#eef2ff" : "#fff",
-                color: form.weekend_days.includes(idx) ? "#4f46e5" : "#6b7280",
+                color: form.weekend_days.includes(idx) ? "var(--accent)" : "var(--text-muted)",
                 fontSize:13,
                 fontWeight:500,
                 cursor:"pointer",
@@ -242,7 +242,7 @@ function DefaultsSection({ getSetting, setSetting, showToast }) {
         <FocusTxt value={form.default_strengths}
           onChange={e=>setForm(f=>({...f,default_strengths:e.target.value}))}
           placeholder="e.g. Electrical, Plumbing, Safety"/>
-        <div style={{fontSize:12,color:"#6b7280",marginTop:6}}>
+        <div style={{fontSize:12,color:"var(--text-muted)",marginTop:6}}>
           Separate multiple skills with commas
         </div>
       </div>
@@ -347,7 +347,7 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
         </div>
 
         {showHolidayForm && (
-          <div style={{...cardSt({background:"#f9fafb"}),marginBottom:12}}>
+          <div style={{...cardSt({background:"var(--bg-muted)"}),marginBottom:12}}>
             <Row2>
               <div>
                 <Lbl>Date</Lbl>
@@ -372,7 +372,7 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
               <div key={idx} style={{...cardSt({display:"flex",justifyContent:"space-between",alignItems:"center"}),fontSize:13}}>
                 <div>
                   <div style={{fontWeight:600}}>{h.name}</div>
-                  <div style={{color:"#6b7280",marginTop:2}}>{h.date}</div>
+                  <div style={{color:"var(--text-muted)",marginTop:2}}>{h.date}</div>
                 </div>
                 <BtnDanger onClick={()=>setHolidayRemoveIdx(idx)} style={{fontSize:12,padding:"4px 8px"}}>Remove</BtnDanger>
               </div>
@@ -381,10 +381,10 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
         )}
 
         <div style={{display:"flex",gap:4,flexWrap:"wrap",fontSize:12}}>
-          <span style={{color:"#6b7280"}}>Quick load:</span>
+          <span style={{color:"var(--text-muted)"}}>Quick load:</span>
           {Object.keys(HOLIDAY_TEMPLATES).map(country => (
             <button key={country} type="button" onClick={()=>loadTemplate(country)}
-              style={{padding:"4px 10px",background:"#f3f4f6",border:"1px solid #e5e7eb",borderRadius:4,cursor:"pointer",fontSize:12,color:"#374151"}}>
+              style={{padding:"4px 10px",background:"var(--bg-muted)",border:"1px solid #e5e7eb",borderRadius:4,cursor:"pointer",fontSize:12,color:"var(--text-secondary)"}}>
               {country}
             </button>
           ))}
@@ -486,7 +486,7 @@ function ExportSection({ employees, projects, assignments, year, month, showToas
           {exporting==='bundle' ? "Exporting..." : "📦 Bundle"}
         </BtnPri>
       </div>
-      <div style={{fontSize:12,color:"#6b7280",marginTop:12}}>
+      <div style={{fontSize:12,color:"var(--text-muted)",marginTop:12}}>
         Downloads are timestamped and include all data for selected scope.
       </div>
     </div>
@@ -666,7 +666,7 @@ function CertificationsSection({ employees, certifications, setCertifications, s
       </div>
 
       {showForm && (
-        <div style={{...cardSt(),background:"#f9fafb",marginBottom:16}}>
+        <div style={{...cardSt(),background:"var(--bg-muted)",marginBottom:16}}>
           <div style={{fontWeight:600,fontSize:14,marginBottom:12}}>New certification</div>
           <Row2>
             <div><Lbl>Employee *</Lbl>
@@ -701,20 +701,20 @@ function CertificationsSection({ employees, certifications, setCertifications, s
       )}
 
       {filtered.length === 0 && (
-        <div style={{textAlign:"center",padding:"32px 0",color:"#9ca3af",fontSize:14}}>No certifications recorded yet.</div>
+        <div style={{textAlign:"center",padding:"32px 0",color:"var(--text-faint)",fontSize:14}}>No certifications recorded yet.</div>
       )}
       {filtered.map(c => {
         const es = expiryStatus(c.expiry_date);
         return (
           <div key={c.id} style={cardSt({display:"flex",justifyContent:"space-between",alignItems:"center"})}>
             <div>
-              <div style={{fontWeight:600,fontSize:14,color:"#111827"}}>{c.name}</div>
-              <div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{empName(c.employee_id)}</div>
+              <div style={{fontWeight:600,fontSize:14,color:"var(--text-primary)"}}>{c.name}</div>
+              <div style={{fontSize:13,color:"var(--text-muted)",marginTop:2}}>{empName(c.employee_id)}</div>
               <div style={{marginTop:6,display:"flex",gap:6,flexWrap:"wrap"}}>
-                {c.issued_date && <span style={{fontSize:12,color:"#6b7280"}}>Issued: {c.issued_date}</span>}
+                {c.issued_date && <span style={{fontSize:12,color:"var(--text-muted)"}}>Issued: {c.issued_date}</span>}
                 {es && <span style={{fontSize:12,fontWeight:600,padding:"2px 8px",borderRadius:99,background:es.bg,color:es.col}}>{es.label}</span>}
               </div>
-              {c.notes && <div style={{fontSize:12,color:"#9ca3af",marginTop:4}}>{c.notes}</div>}
+              {c.notes && <div style={{fontSize:12,color:"var(--text-faint)",marginTop:4}}>{c.notes}</div>}
             </div>
             <BtnDanger onClick={()=>setCertToDelete(c.id)} style={{fontSize:12}}>Remove</BtnDanger>
           </div>
@@ -770,7 +770,7 @@ export default function SettingsTab({
         style={{
           width:"100%",
           padding:"14px 16px",
-          background:"#f9fafb",
+          background:"var(--bg-muted)",
           border:"1px solid #e5e7eb",
           borderRadius:8,
           display:"flex",
@@ -779,7 +779,7 @@ export default function SettingsTab({
           cursor:"pointer",
           fontSize:14,
           fontWeight:600,
-          color:"#111827",
+          color:"var(--text-primary)",
         }}>
         <span style={{display:"flex",alignItems:"center",gap:8}}>
           <span>{icon}</span> {title}

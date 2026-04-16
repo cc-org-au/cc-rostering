@@ -3,10 +3,19 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { supabase } from '../lib/supabase.js';
 import UserMenu from './components/UserMenu';
+import { NotificationCenter } from './components/NotificationCenter';
+import SettingsTab from './components/SettingsTab';
+import ReportsTab from './components/ReportsTab';
+import PTOTab from './components/PTOTab';
+import AdminTab from './components/AdminTab';
 import { SchedulerDragDrop } from './components/SchedulerDragDrop';
-import { DAYS_SHORT, MONTHS, EMP_TYPES, ROLES, STRENGTHS, PROJ_COLORS, HPD, ConfirmModal } from './components/shared';
+import {
+  DAYS_SHORT, MONTHS, EMP_TYPES, ROLES, STRENGTHS, PROJ_COLORS, HPD, ConfirmModal,
+  cardSt, inpSt, selSt, ProgBar, Avatar, Tag, SecTitle, Empty, BtnPri, Btn, BtnDanger,
+  Overlay, ModalBox, Lbl, Row2, FocusInp, FocusTxt, ToggleBtn, StrBtn,
+} from './components/shared';
 
-const TABS        = ["Projects","Employees","Scheduler","Roster","Capacity","Summary","Admin"];
+const TABS        = ["Projects","Employees","Scheduler","Roster","Capacity","Summary","Settings","Reports","PTO","Admin"];
 const NOW         = new Date();
 
 // ── pure utils ────────────────────────────────────────────────────────────────
@@ -108,72 +117,8 @@ const rowToEmp = r => ({
   maxHoursPerMonth: r.max_hours_per_month||160, strengths: r.strengths||[],
 });
 
-// ── stable primitives (outside App) ──────────────────────────────────────────
-const cardSt  = (x={}) => ({background:"#fff",border:"1.5px solid #e5e7eb",borderRadius:12,padding:"16px 18px",marginBottom:10,...x});
-const inpSt   = (x={}) => ({width:"100%",boxSizing:"border-box",padding:"10px 12px",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"#fff",color:"#111827",outline:"none",...x});
-const selSt   = (x={}) => ({padding:"10px 12px",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"#fff",color:"#111827",outline:"none",cursor:"pointer",...x});
-
-function ProgBar({pct,color}) {
-  const c=pct>=100?"#dc2626":pct>=80?"#d97706":(color||"#059669");
-  return <div style={{height:7,borderRadius:99,background:"#f3f4f6",overflow:"hidden",marginTop:5}}><div style={{height:"100%",width:`${Math.min(pct,100)}%`,background:c,borderRadius:99,transition:"width 0.3s"}}/></div>;
-}
-function Avatar({name,color}) {
-  return <div style={{width:34,height:34,borderRadius:"50%",background:color||"#eef2ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,color:color?"#fff":"#4f46e5",flexShrink:0}}>{inits(name)}</div>;
-}
-function Tag({children,bg,col}) {
-  return <span style={{display:"inline-flex",alignItems:"center",padding:"3px 10px",borderRadius:99,fontSize:12,fontWeight:500,background:bg,color:col}}>{children}</span>;
-}
-function SecTitle({children}) {
-  return <div style={{fontSize:11,fontWeight:600,color:"#6b7280",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>{children}</div>;
-}
-function Empty({icon,title,sub}) {
-  return <div style={{textAlign:"center",padding:"48px 24px",border:"2px dashed #e5e7eb",borderRadius:12}}><div style={{fontSize:32,marginBottom:8}}>{icon}</div><div style={{fontSize:15,fontWeight:500,color:"#6b7280",marginBottom:4}}>{title}</div><div style={{fontSize:13,color:"#9ca3af"}}>{sub}</div></div>;
-}
-function BtnPri({onClick,children,style={}}) {
-  return <button onClick={onClick} style={{padding:"10px 18px",background:"#4f46e5",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontFamily:"inherit",fontWeight:500,cursor:"pointer",...style}}>{children}</button>;
-}
-function Btn({onClick,children,style={}}) {
-  return <button onClick={onClick} style={{padding:"9px 16px",background:"#fff",color:"#374151",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
-}
-function BtnDanger({onClick,children}) {
-  return <button onClick={onClick} style={{padding:"9px 14px",background:"#fff5f5",color:"#dc2626",border:"1.5px solid #fecaca",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer"}}>{children}</button>;
-}
-function Overlay({onClose,children}) {
-  return <div onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.25)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,overflowY:"auto",padding:"32px 12px 48px"}}>{children}</div>;
-}
-function ModalBox({children,maxWidth=700}) {
-  return <div style={{background:"#fff",borderRadius:16,padding:24,width:`min(${maxWidth}px,100%)`,boxShadow:"0 4px 32px rgba(0,0,0,0.12)"}}>{children}</div>;
-}
-function Lbl({children}) { return <div style={{fontSize:13,fontWeight:600,color:"#374151",marginBottom:5}}>{children}</div>; }
-function Row2({children}) { return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{children}</div>; }
-function FocusInp({value,onChange,placeholder,type="text",style={}}) {
-  return <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-    style={inpSt(style)}
-    onFocus={e=>e.target.style.borderColor="#4f46e5"}
-    onBlur={e=>e.target.style.borderColor="#d1d5db"}/>;
-}
-function FocusTxt({value,onChange,placeholder}) {
-  return <textarea value={value} onChange={onChange} placeholder={placeholder} rows={3}
-    style={inpSt({resize:"vertical"})}
-    onFocus={e=>e.target.style.borderColor="#4f46e5"}
-    onBlur={e=>e.target.style.borderColor="#d1d5db"}/>;
-}
-function ToggleBtn({options,value,onChange}) {
-  return <div style={{display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden",width:"fit-content"}}>
-    {options.map(([v,label])=>(
-      <button key={v} type="button" onClick={()=>onChange(v)}
-        style={{padding:"9px 16px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:value===v?"#4f46e5":"#fff",color:value===v?"#fff":"#374151"}}>
-        {label}
-      </button>
-    ))}
-  </div>;
-}
-function StrBtn({label,active,onClick}) {
-  return <button type="button" onClick={onClick} style={{padding:"4px 10px",borderRadius:99,fontSize:12,fontFamily:"inherit",cursor:"pointer",border:"1.5px solid",background:active?"#ecfdf5":"#fff",color:active?"#059669":"#6b7280",borderColor:active?"#6ee7b7":"#d1d5db"}}>{label}</button>;
-}
-
 // ── App ───────────────────────────────────────────────────────────────────────
-export default function App({ auth, demoMode }) {
+export default function App({ auth }) {
   const [tab,setTab]          = useState("Projects");
   const [projects,setProj]    = useState([]);
   const [employees,setEmps]   = useState([]);
@@ -188,6 +133,10 @@ export default function App({ auth, demoMode }) {
   const [loading,setLoading]  = useState(true);
   const [toast,setToast]      = useState(null);
   const [rosterView,setRView] = useState("calendar");
+  const [certifications,setCertifications] = useState([]);
+  const [shiftRules,setShiftRules] = useState([]);
+  const [userProfiles,setUserProfiles] = useState([]);
+  const [timesheets] = useState([]);
   const pRef = useRef(null);
   const eRef = useRef(null);
 
@@ -208,6 +157,17 @@ export default function App({ auth, demoMode }) {
       setLoading(false);
     })();
   },[]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from("certifications").select("*").order("expiry_date", { ascending: true });
+        if (data) setCertifications(data);
+      } catch {
+        /* table may not exist until migration applied */
+      }
+    })();
+  }, []);
 
   function showToast(msg) { setToast(msg); setTimeout(()=>setToast(null),4000); }
 
@@ -256,6 +216,12 @@ export default function App({ auth, demoMode }) {
   }
 
   const calDays=useMemo(()=>Array.from({length:daysInMo(rYear,rMonth)},(_,i)=>i+1),[rYear,rMonth]);
+  const linkedEmployeeId = useMemo(() => {
+    const email = auth?.user?.email?.toLowerCase();
+    if (!email) return employees[0]?.id || "";
+    const match = employees.find((e) => (e.email || "").toLowerCase() === email);
+    return match?.id || employees[0]?.id || "";
+  }, [auth?.user?.email, employees]);
   const assignedOnDay=(y,m,d)=>employees.filter(e=>getA(y,m,d,e.id));
   const empMonthH=eId=>calDays.reduce((h,d)=>h+(getA(rYear,rMonth,d,eId)?HPD:0),0);
   const projManH=pId=>calDays.reduce((h,d)=>h+employees.filter(e=>getA(rYear,rMonth,d,e.id)===pId).length*HPD,0);
@@ -263,7 +229,7 @@ export default function App({ auth, demoMode }) {
   const scheduledH=()=>calDays.reduce((h,d)=>h+employees.filter(e=>getA(rYear,rMonth,d,e.id)).length*HPD,0);
   const labourCostM=pId=>employees.reduce((acc,e)=>{const days=calDays.filter(d=>getA(rYear,rMonth,d,e.id)===pId).length;return acc+days*HPD*(parseFloat(e.rate)||0);},0);
   const revenueM=p=>p.chargeOutRate?projManH(p.id)*parseFloat(p.chargeOutRate):null;
-  const projColor=id=>projects.find(p=>p.id===id)?.color||"#888";
+  const projColor=id=>projects.find(p=>p.id===id)?.color||"#64748b";
   const projNameOf=id=>projects.find(p=>p.id===id)?.name||"";
 
   function clearMonth() {
@@ -371,7 +337,7 @@ export default function App({ auth, demoMode }) {
       <Overlay onClose={close}>
         <ModalBox>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <h3 style={{margin:0,fontSize:18,fontWeight:700,color:"#111827"}}>{projMod==="new"?"New project":"Edit project"}</h3>
+            <h3 style={{margin:0,fontSize:18,fontWeight:700,color:"var(--text-primary)"}}>{projMod==="new"?"New project":"Edit project"}</h3>
             <Btn onClick={close}>Cancel</Btn>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -391,13 +357,13 @@ export default function App({ auth, demoMode }) {
                 <ToggleBtn options={[["days","Days"],["hours","Hours"]]} value={totalUnit} onChange={switchUnit}/>
               </div>
               {totalInput&&parseFloat(totalInput)>0&&(
-                <div style={{marginTop:5,fontSize:12,color:"#6b7280"}}>
-                  {totalUnit==="days"?<>= <b style={{color:"#111827"}}>{parseFloat(totalInput)*HPD}h</b> total</>:<>= <b style={{color:"#111827"}}>{(parseFloat(totalInput)/HPD).toFixed(1)} days</b> equiv</>}
+                <div style={{marginTop:5,fontSize:12,color:"var(--text-muted)"}}>
+                  {totalUnit==="days"?<>= <b style={{color:"var(--text-primary)"}}>{parseFloat(totalInput)*HPD}h</b> total</>:<>= <b style={{color:"var(--text-primary)"}}>{(parseFloat(totalInput)/HPD).toFixed(1)} days</b> equiv</>}
                 </div>
               )}
               {budget&&cor&&parseFloat(budget)>0&&parseFloat(cor)>0&&(
-                <div style={{marginTop:4,fontSize:12,color:"#6b7280"}}>
-                  💡 Budget implies <b style={{color:"#111827"}}>{Math.round(parseFloat(budget)/parseFloat(cor)/HPD)} days</b> ({Math.round(parseFloat(budget)/parseFloat(cor))}h) at ${cor}/hr
+                <div style={{marginTop:4,fontSize:12,color:"var(--text-muted)"}}>
+                  💡 Budget implies <b style={{color:"var(--text-primary)"}}>{Math.round(parseFloat(budget)/parseFloat(cor)/HPD)} days</b> ({Math.round(parseFloat(budget)/parseFloat(cor))}h) at ${cor}/hr
                 </div>
               )}
             </div>
@@ -406,23 +372,23 @@ export default function App({ auth, demoMode }) {
               <ToggleBtn options={[["flexible","Flexible"],["fixed","Fixed team size"]]} value={staffMode} onChange={v=>{setSM(v);sync({staffMode:v});}}/>
               <div style={{marginTop:10}}>
                 {staffMode==="flexible"
-                  ?<div style={{fontSize:13,color:"#6b7280",padding:"10px 14px",background:"#f9fafb",border:"1.5px solid #e5e7eb",borderRadius:8}}>Staff can vary day to day — assign whoever is needed when building the roster.</div>
-                  :<div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#eff6ff",border:"1.5px solid #bfdbfe",borderRadius:8}}>
-                    <span style={{fontSize:13,color:"#1d4ed8",whiteSpace:"nowrap"}}>Exactly</span>
+                  ?<div style={{fontSize:13,color:"var(--text-muted)",padding:"10px 14px",background:"var(--bg-muted)",border:"1.5px solid var(--border)",borderRadius:8}}>Staff can vary day to day — assign whoever is needed when building the roster.</div>
+                  :<div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--info-bg)",border:"1.5px solid var(--info-border)",borderRadius:8}}>
+                    <span style={{fontSize:13,color:"var(--info-text-strong)",whiteSpace:"nowrap"}}>Exactly</span>
                     <FocusInp type="number" value={fixedStaff} placeholder="e.g. 4" style={{width:80,textAlign:"center"}} onChange={e=>{setFS(e.target.value);sync({fixedStaff:e.target.value});}}/>
-                    <span style={{fontSize:13,color:"#1d4ed8"}}>staff required on site every day.</span>
+                    <span style={{fontSize:13,color:"var(--info-text-strong)"}}>staff required on site every day.</span>
                   </div>}
               </div>
             </div>
             <div>
               <Lbl>Project colour</Lbl>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {PROJ_COLORS.map(c=><button key={c} type="button" onClick={()=>{setColor(c);sync({color:c});}} style={{width:28,height:28,borderRadius:"50%",background:c,border:color===c?"3px solid #111827":"2px solid transparent",cursor:"pointer"}}/>)}
+                {PROJ_COLORS.map(c=><button key={c} type="button" onClick={()=>{setColor(c);sync({color:c});}} style={{width:28,height:28,borderRadius:"50%",background:c,border:color===c?"3px solid var(--text-primary)":"2px solid transparent",cursor:"pointer"}}/>)}
               </div>
             </div>
             <div>
               <Lbl>Strengths required</Lbl>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:10,border:"1.5px solid #e5e7eb",borderRadius:8,background:"#fafafa"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:10,border:"1.5px solid var(--border)",borderRadius:8,background:"var(--bg-surface)"}}>
                 {STRENGTHS.map(st=>(
                   <StrBtn key={st} label={st} active={strengths.includes(st)}
                     onClick={()=>{const n=strengths.includes(st)?strengths.filter(x=>x!==st):[...strengths,st];setStr(n);sync({strengthsRequired:n});}}/>
@@ -434,18 +400,18 @@ export default function App({ auth, demoMode }) {
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 20px 1fr 1fr",gap:8,alignItems:"center"}}>
                 <select style={selSt({width:"100%"})} value={sm} onChange={e=>{setSm(e.target.value);sync({startMonth:e.target.value});rerender(r=>r+1);}}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>
                 <select style={selSt({width:"100%"})} value={sy} onChange={e=>{setSy(e.target.value);sync({startYear:e.target.value});rerender(r=>r+1);}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
-                <span style={{textAlign:"center",color:"#9ca3af"}}>→</span>
+                <span style={{textAlign:"center",color:"var(--text-faint)"}}>→</span>
                 <select style={selSt({width:"100%"})} value={em} onChange={e=>{setEm(e.target.value);sync({endMonth:e.target.value});rerender(r=>r+1);}}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>
                 <select style={selSt({width:"100%"})} value={ey} onChange={e=>{setEy(e.target.value);sync({endYear:e.target.value});rerender(r=>r+1);}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
               </div>
             </div>
             {localMonths.length===0
-              ?<p style={{fontSize:13,color:"#9ca3af",margin:0}}>Set project dates above to configure monthly allocations.</p>
+              ?<p style={{fontSize:13,color:"var(--text-faint)",margin:0}}>Set project dates above to configure monthly allocations.</p>
               :<div>
                 <Lbl>Monthly allocation ({totalUnit})</Lbl>
-                <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:10,padding:"10px 14px",background:"#f9fafb",border:"1.5px solid #e5e7eb",borderRadius:8}}>
-                  {tH&&<span style={{fontSize:13,color:"#374151"}}>Target: <b style={{color:"#111827"}}>{totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`}</b></span>}
-                  <span style={{fontSize:13,color:"#374151"}}>Allocated: <b style={{color:"#111827"}}>{totalUnit==="hours"?fmtH(totalAllocH):`${Math.round(totalAllocH/HPD)}d`}</b></span>
+                <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:10,padding:"10px 14px",background:"var(--bg-muted)",border:"1.5px solid var(--border)",borderRadius:8}}>
+                  {tH&&<span style={{fontSize:13,color:"var(--text-secondary)"}}>Target: <b style={{color:"var(--text-primary)"}}>{totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`}</b></span>}
+                  <span style={{fontSize:13,color:"var(--text-secondary)"}}>Allocated: <b style={{color:"var(--text-primary)"}}>{totalUnit==="hours"?fmtH(totalAllocH):`${Math.round(totalAllocH/HPD)}d`}</b></span>
                   {diff!==null&&<span style={{fontSize:13,fontWeight:600,color:diff>0.5?"#dc2626":diff<-0.5?"#d97706":"#059669"}}>
                     {diff>0.5?`+${totalUnit==="hours"?fmtH(diff):`${Math.round(diff/HPD)}d`} over`:diff<-0.5?`${totalUnit==="hours"?fmtH(Math.abs(diff)):`${Math.round(Math.abs(diff)/HPD)}d`} unallocated`:"✓ Fully allocated"}
                   </span>}
@@ -464,25 +430,25 @@ export default function App({ auth, demoMode }) {
                     const mb=monthBudgetSlice({...pRef.current,startMonth:sm,startYear:sy,endMonth:em,endYear:ey},y,m);
                     const mRev=cor&&parseFloat(cor)>0?stored*parseFloat(cor):null;
                     return (
-                      <div key={key} style={{background:hasOv?"#fffbeb":"#f9fafb",border:`1.5px solid ${hasOv?"#fcd34d":"#e5e7eb"}`,borderRadius:8,padding:"10px 12px"}}>
+                      <div key={key} style={{background:hasOv?"#fffbeb":"var(--bg-muted)",border:`1.5px solid ${hasOv?"#fcd34d":"var(--border)"}`,borderRadius:8,padding:"10px 12px"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
-                          <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>{MONTHS[m].slice(0,3)} {y}</span>
+                          <span style={{fontSize:12,fontWeight:600,color:"var(--text-secondary)"}}>{MONTHS[m].slice(0,3)} {y}</span>
                           {hasOv&&<span style={{fontSize:10,color:"#b45309"}}>edited</span>}
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
                           <input type="number" min={0} value={displayVal}
                             style={inpSt({width:64,padding:"6px 8px",textAlign:"center"})}
                             onChange={e=>setMonthVal(key,e.target.value)}
-                            onFocus={e=>e.target.style.borderColor="#4f46e5"}
-                            onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
-                          <span style={{fontSize:11,color:"#9ca3af"}}>{isH?`h / ${wd*HPD}h`:`d / ${wd}d`}</span>
+                            onFocus={e=>e.target.style.borderColor="var(--accent)"}
+                            onBlur={e=>e.target.style.borderColor="var(--border-input)"}/>
+                          <span style={{fontSize:11,color:"var(--text-faint)"}}>{isH?`h / ${wd*HPD}h`:`d / ${wd}d`}</span>
                         </div>
-                        <div style={{fontSize:11,color:"#6b7280",lineHeight:1.6}}>
+                        <div style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.6}}>
                           {isH?<div>{(stored/HPD).toFixed(1)}d equiv</div>:<div>{stored}h total</div>}
                           {mb&&<div>Budget: {fmt$(mb)}</div>}
                           {mRev&&<div>Revenue: {fmt$(mRev)}</div>}
                         </div>
-                        {hasOv&&<button type="button" onClick={()=>clearMonthVal(key)} style={{marginTop:5,fontSize:10,color:"#9ca3af",background:"none",border:"none",cursor:"pointer",padding:0}}>↩ reset</button>}
+                        {hasOv&&<button type="button" onClick={()=>clearMonthVal(key)} style={{marginTop:5,fontSize:10,color:"var(--text-faint)",background:"none",border:"none",cursor:"pointer",padding:0}}>↩ reset</button>}
                       </div>
                     );
                   })}
@@ -490,15 +456,15 @@ export default function App({ auth, demoMode }) {
               </div>
             }
             <div><Lbl>Notes</Lbl><FocusTxt value={notes} placeholder="Any additional notes..." onChange={e=>{setNotes(e.target.value);sync({notes:e.target.value});}}/></div>
-            <div style={{paddingTop:12,borderTop:"1.5px solid #e5e7eb"}}>
+            <div style={{paddingTop:12,borderTop:"1.5px solid var(--border)"}}>
               <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13}}>
                 <input type="checkbox" checked={isCompleted} onChange={e=>{setIsCompleted(e.target.checked);sync({isCompleted:e.target.checked});}} style={{width:18,height:18,cursor:"pointer"}}/>
-                <span style={{color:isCompleted?"#059669":"#6b7280",fontWeight:500}}>Mark project as completed</span>
+                <span style={{color:isCompleted?"#059669":"var(--text-muted)",fontWeight:500}}>Mark project as completed</span>
               </label>
               {isCompleted&&<p style={{fontSize:11,color:"#059669",margin:"6px 0 0 26px"}}>✓ This project will not appear in active scheduling.</p>}
             </div>
           </div>
-          <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20,paddingTop:16,borderTop:"1px solid #e5e7eb"}}>
+          <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20,paddingTop:16,borderTop:"1px solid var(--border)"}}>
             <Btn onClick={close}>Cancel</Btn>
             <BtnPri onClick={saveProj}>Save project</BtnPri>
           </div>
@@ -526,7 +492,7 @@ export default function App({ auth, demoMode }) {
       <Overlay onClose={close}>
         <ModalBox>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <h3 style={{margin:0,fontSize:18,fontWeight:700,color:"#111827"}}>{empMod==="new"?"New employee":"Edit employee"}</h3>
+            <h3 style={{margin:0,fontSize:18,fontWeight:700,color:"var(--text-primary)"}}>{empMod==="new"?"New employee":"Edit employee"}</h3>
             <Btn onClick={close}>Cancel</Btn>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -546,12 +512,12 @@ export default function App({ auth, demoMode }) {
               <Lbl>Max hours per month</Lbl>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <FocusInp type="number" value={maxH} style={{width:110}} onChange={e=>{const v=parseInt(e.target.value)||160;setMaxH(v);sync({maxHoursPerMonth:v});}}/>
-                <span style={{fontSize:13,color:"#6b7280"}}>{Math.round(maxH/HPD)} days</span>
+                <span style={{fontSize:13,color:"var(--text-muted)"}}>{Math.round(maxH/HPD)} days</span>
               </div>
             </div>
             <div>
               <Lbl>Strengths</Lbl>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:10,border:"1.5px solid #e5e7eb",borderRadius:8,background:"#fafafa"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:10,border:"1.5px solid var(--border)",borderRadius:8,background:"var(--bg-surface)"}}>
                 {STRENGTHS.map(s=><StrBtn key={s} label={s} active={str.includes(s)} onClick={()=>{const n=str.includes(s)?str.filter(x=>x!==s):[...str,s];setStr(n);sync({strengths:n});}}/>)}
               </div>
             </div>
@@ -560,13 +526,13 @@ export default function App({ auth, demoMode }) {
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {DAYS_SHORT.map(d=>(
                   <button key={d} type="button" onClick={()=>{const n={...avail,[d]:!avail[d]};setAvail(n);sync({availability:n});}}
-                    style={{padding:"8px 12px",borderRadius:8,border:"1.5px solid",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:500,background:avail[d]?"#dcfce7":"#f9fafb",color:avail[d]?"#166534":"#6b7280",borderColor:avail[d]?"#86efac":"#e5e7eb"}}>{d}</button>
+                    style={{padding:"8px 12px",borderRadius:8,border:"1.5px solid",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:500,background:avail[d]?"#dcfce7":"var(--bg-muted)",color:avail[d]?"#166534":"var(--text-muted)",borderColor:avail[d]?"#86efac":"var(--border)"}}>{d}</button>
                 ))}
               </div>
             </div>
             <div><Lbl>Notes</Lbl><FocusTxt value={notes} placeholder="Any additional notes..." onChange={e=>{setNotes(e.target.value);sync({notes:e.target.value});}}/></div>
           </div>
-          <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20,paddingTop:16,borderTop:"1px solid #e5e7eb"}}>
+          <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:20,paddingTop:16,borderTop:"1px solid var(--border)"}}>
             <Btn onClick={close}>Cancel</Btn>
             <BtnPri onClick={saveEmp}>Save employee</BtnPri>
           </div>
@@ -592,8 +558,8 @@ export default function App({ auth, demoMode }) {
         <ModalBox maxWidth={540}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
             <div>
-              <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{dl} {day} {MONTHS[rMonth]} {rYear}</div>
-              <div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{assigned.length} staff on site</div>
+              <div style={{fontSize:18,fontWeight:700,color:"var(--text-primary)"}}>{dl} {day} {MONTHS[rMonth]} {rYear}</div>
+              <div style={{fontSize:13,color:"var(--text-muted)",marginTop:2}}>{assigned.length} staff on site</div>
             </div>
             <Btn onClick={()=>setDayEd(null)}>Close</Btn>
           </div>
@@ -603,9 +569,9 @@ export default function App({ auth, demoMode }) {
                 const count=assigned.filter(e=>getA(rYear,rMonth,day,e.id)===p.id).length;
                 const fixed=p.staffMode==="fixed"&&p.fixedStaff?parseInt(p.fixedStaff):null;
                 const ok=fixed===null||count===fixed;
-                const bg=fixed===null?"#f3f4f6":ok?"#dcfce7":"#fee2e2";
-                const col=fixed===null?"#6b7280":ok?"#166534":"#dc2626";
-                const border=ok?(fixed===null?"#e5e7eb":"#86efac"):"#fca5a5";
+                const bg=fixed===null?"var(--bg-muted)":ok?"#dcfce7":"#fee2e2";
+                const col=fixed===null?"var(--text-muted)":ok?"#166534":"#dc2626";
+                const border=ok?(fixed===null?"var(--border)":"#86efac"):"#fca5a5";
                 return (
                   <div key={p.id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:99,background:bg,border:`1.5px solid ${border}`}}>
                     <span style={{width:7,height:7,borderRadius:"50%",background:p.color,flexShrink:0}}/>
@@ -619,20 +585,20 @@ export default function App({ auth, demoMode }) {
             </div>
           )}
           <SecTitle>On site ({assigned.length})</SecTitle>
-          {assigned.length===0&&<p style={{fontSize:13,color:"#9ca3af",marginBottom:12}}>No one assigned — add staff below.</p>}
+          {assigned.length===0&&<p style={{fontSize:13,color:"var(--text-faint)",marginBottom:12}}>No one assigned — add staff below.</p>}
           {assigned.map(e=>{
             const pid=getA(rYear,rMonth,day,e.id);
             return (
-              <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid #e5e7eb",borderRadius:10,background:"#fafafa",marginBottom:6}}>
+              <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid var(--border)",borderRadius:10,background:"var(--bg-surface)",marginBottom:6}}>
                 <Avatar name={e.name} color={projColor(pid)}/>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:14,fontWeight:500,color:"#111827"}}>{e.name}</div>
-                  <div style={{fontSize:12,color:"#6b7280"}}>{e.role}</div>
+                  <div style={{fontSize:14,fontWeight:500,color:"var(--text-primary)"}}>{e.name}</div>
+                  <div style={{fontSize:12,color:"var(--text-muted)"}}>{e.role}</div>
                 </div>
                 <select value={pid} onChange={ev=>setA(rYear,rMonth,day,e.id,ev.target.value)} style={selSt({fontSize:13,padding:"6px 10px"})}>
                   {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-                <button onClick={()=>setA(rYear,rMonth,day,e.id,null)} style={{border:"none",background:"none",cursor:"pointer",color:"#9ca3af",fontSize:20,lineHeight:1,padding:"0 4px"}}>✕</button>
+                <button onClick={()=>setA(rYear,rMonth,day,e.id,null)} style={{border:"none",background:"none",cursor:"pointer",color:"var(--text-faint)",fontSize:20,lineHeight:1,padding:"0 4px"}}>✕</button>
               </div>
             );
           })}
@@ -640,13 +606,13 @@ export default function App({ auth, demoMode }) {
             <div style={{marginTop:16}}>
               <SecTitle>Available to add ({available.length})</SecTitle>
               {available.map(e=>(
-                <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid #e5e7eb",borderRadius:10,background:"#fff",marginBottom:6}}>
+                <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid var(--border)",borderRadius:10,background:"var(--bg-card)",marginBottom:6}}>
                   <Avatar name={e.name}/>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:14,fontWeight:500,color:"#111827"}}>{e.name}</div>
-                    <div style={{fontSize:12,color:"#6b7280"}}>
+                    <div style={{fontSize:14,fontWeight:500,color:"var(--text-primary)"}}>{e.name}</div>
+                    <div style={{fontSize:12,color:"var(--text-muted)"}}>
                       {e.role}
-                      {e.rate&&<span style={{marginLeft:8,color:"#6b7280"}}>· ${e.rate}/hr</span>}
+                      {e.rate&&<span style={{marginLeft:8,color:"var(--text-muted)"}}>· ${e.rate}/hr</span>}
                       {e.strengths?.length?` · ${e.strengths.slice(0,3).join(", ")}${e.strengths.length>3?` +${e.strengths.length-3}`:""}`:""}
                     </div>
                   </div>
@@ -704,11 +670,11 @@ export default function App({ auth, demoMode }) {
     return (
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <h3 style={{margin:0,fontSize:16,fontWeight:600,color:"#111827"}}>Projects <span style={{fontWeight:400,color:"#6b7280"}}>({active.length}{completed.length>0?`+${completed.length} completed`:""})</span></h3>
+          <h3 style={{margin:0,fontSize:16,fontWeight:600,color:"var(--text-primary)"}}>Projects <span style={{fontWeight:400,color:"var(--text-muted)"}}>({active.length}{completed.length>0?`+${completed.length} completed`:""})</span></h3>
           <BtnPri onClick={()=>openProjMod(null)}>+ Add project</BtnPri>
         </div>
         {projects.length===0&&<Empty icon="🌿" title="No projects yet" sub='Click "Add project" to get started'/>}
-        {active.length===0&&completed.length>0&&<p style={{fontSize:13,color:"#9ca3af",marginBottom:16}}>All projects completed! 🎉</p>}
+        {active.length===0&&completed.length>0&&<p style={{fontSize:13,color:"var(--text-faint)",marginBottom:16}}>All projects completed! 🎉</p>}
         {active.map(p=>{
           const months=getProjectMonths(p);
           const budH=totalBudgetHours(p);
@@ -718,15 +684,15 @@ export default function App({ auth, demoMode }) {
             <div key={p.id} style={cardSt({borderLeft:`4px solid ${p.color}`})}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:"#111827"}}>{p.name}</div>
-                  {p.client&&<div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{p.client}</div>}
+                  <div style={{fontSize:16,fontWeight:600,color:"var(--text-primary)"}}>{p.name}</div>
+                  {p.client&&<div style={{fontSize:13,color:"var(--text-muted)",marginTop:2}}>{p.client}</div>}
                   <div style={{marginTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
                     {p.budget&&<Tag bg="#eff6ff" col="#1d4ed8">Budget: {fmt$(p.budget)}</Tag>}
                     {p.chargeOutRate&&<Tag bg="#fef9c3" col="#713f12">Charge-out: ${p.chargeOutRate}/hr</Tag>}
                     {tH&&<Tag bg="#ecfdf5" col="#065f46">Allocation: {p.totalUnit==="hours"?fmtH(tH):`${Math.round(tH/HPD)}d`}</Tag>}
                     {budH&&!tH&&<Tag bg="#ecfdf5" col="#065f46">Budget: {Math.round(budH/HPD)}d ({Math.round(budH)}h)</Tag>}
                     {months.length>0&&<Tag bg="#fef3c7" col="#92400e">{MONTHS[+p.startMonth].slice(0,3)} {p.startYear} – {MONTHS[+p.endMonth].slice(0,3)} {p.endYear}</Tag>}
-                    {p.staffMode==="fixed"&&p.fixedStaff?<Tag bg="#eff6ff" col="#1d4ed8">Fixed: {p.fixedStaff} staff/day</Tag>:<Tag bg="#f3f4f6" col="#6b7280">Flexible staffing</Tag>}
+                    {p.staffMode==="fixed"&&p.fixedStaff?<Tag bg="#eff6ff" col="#1d4ed8">Fixed: {p.fixedStaff} staff/day</Tag>:<Tag bg="var(--bg-muted)" col="var(--text-muted)">Flexible staffing</Tag>}
                   </div>
                   {p.strengthsRequired?.length>0&&<div style={{marginTop:6,display:"flex",gap:4,flexWrap:"wrap"}}>{p.strengthsRequired.map(s=><Tag key={s} bg="#ecfdf5" col="#065f46">{s}</Tag>)}</div>}
                   {months.length>0&&(
@@ -735,7 +701,7 @@ export default function App({ auth, demoMode }) {
                         const h=monthAllocH(p,y,m);
                         const mb=monthBudgetSlice(p,y,m);
                         const display=p.totalUnit==="hours"?fmtH(h):`${Math.round(h/HPD)}d`;
-                        return <span key={pmKey(y,m)} style={{fontSize:12,padding:"3px 8px",borderRadius:6,background:"#f9fafb",border:"1px solid #e5e7eb",color:"#374151"}}>{MONTHS[m].slice(0,3)} {y}: <b style={{color:"#111827"}}>{display}</b>{mb?` · ${fmt$(mb)}`:""}</span>;
+                        return <span key={pmKey(y,m)} style={{fontSize:12,padding:"3px 8px",borderRadius:6,background:"var(--bg-muted)",border:"1px solid var(--border)",color:"var(--text-secondary)"}}>{MONTHS[m].slice(0,3)} {y}: <b style={{color:"var(--text-primary)"}}>{display}</b>{mb?` · ${fmt$(mb)}`:""}</span>;
                       })}
                     </div>
                   )}
@@ -745,7 +711,7 @@ export default function App({ auth, demoMode }) {
                       {totalAllocH>tH+0.5?" — over":totalAllocH<tH-0.5?" — under":" ✓"}
                     </div>
                   )}
-                  {p.notes&&<div style={{fontSize:13,color:"#6b7280",marginTop:8}}>{p.notes}</div>}
+                  {p.notes&&<div style={{fontSize:13,color:"var(--text-muted)",marginTop:8}}>{p.notes}</div>}
                 </div>
                 <div style={{display:"flex",gap:6,flexShrink:0}}>
                   <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
@@ -756,14 +722,14 @@ export default function App({ auth, demoMode }) {
           );
         })}
         {completed.length>0&&(
-          <div style={{marginTop:20,paddingTop:16,borderTop:"2px solid #e5e7eb"}}>
-            <h4 style={{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"#6b7280"}}>✓ Completed ({completed.length})</h4>
+          <div style={{marginTop:20,paddingTop:16,borderTop:"2px solid var(--border)"}}>
+            <h4 style={{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"var(--text-muted)"}}>✓ Completed ({completed.length})</h4>
             {completed.map(p=>(
               <div key={p.id} style={cardSt({opacity:0.7,borderLeft:`4px solid ${p.color}`})}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:600,color:"#6b7280",textDecoration:"line-through"}}>{p.name}</div>
-                    {p.client&&<div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>{p.client}</div>}
+                    <div style={{fontSize:15,fontWeight:600,color:"var(--text-muted)",textDecoration:"line-through"}}>{p.name}</div>
+                    {p.client&&<div style={{fontSize:12,color:"var(--text-faint)",marginTop:2}}>{p.client}</div>}
                   </div>
                   <div style={{display:"flex",gap:6,flexShrink:0}}>
                     <Btn onClick={()=>openProjMod(p)}>Edit</Btn>
@@ -798,7 +764,7 @@ export default function App({ auth, demoMode }) {
     return (
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <h3 style={{margin:0,fontSize:16,fontWeight:600,color:"#111827"}}>Employees <span style={{fontWeight:400,color:"#6b7280"}}>({employees.length})</span></h3>
+          <h3 style={{margin:0,fontSize:16,fontWeight:600,color:"var(--text-primary)"}}>Employees <span style={{fontWeight:400,color:"var(--text-muted)"}}>({employees.length})</span></h3>
           <BtnPri onClick={()=>openEmpMod(null)}>+ Add employee</BtnPri>
         </div>
         {employees.length===0&&<Empty icon="👷" title="No employees yet" sub='Click "Add employee" to get started'/>}
@@ -806,9 +772,9 @@ export default function App({ auth, demoMode }) {
           <div key={e.id} style={cardSt()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
               <div style={{display:"flex",gap:12,alignItems:"flex-start",flex:1}}>
-                <Avatar name={e.name} color="#4f46e5"/>
+                <Avatar name={e.name} color="var(--accent)"/>
                 <div>
-                  <div style={{fontSize:15,fontWeight:600,color:"#111827"}}>{e.name}</div>
+                  <div style={{fontSize:15,fontWeight:600,color:"var(--text-primary)"}}>{e.name}</div>
                   <div style={{marginTop:5,display:"flex",gap:5,flexWrap:"wrap"}}>
                     <Tag bg="#eef2ff" col="#3730a3">{e.type}</Tag>
                     <Tag bg="#f0f9ff" col="#075985">{e.role}</Tag>
@@ -817,9 +783,9 @@ export default function App({ auth, demoMode }) {
                   </div>
                   {e.strengths?.length>0&&<div style={{marginTop:6,display:"flex",gap:4,flexWrap:"wrap"}}>{e.strengths.map(s=><Tag key={s} bg="#ecfdf5" col="#065f46">{s}</Tag>)}</div>}
                   <div style={{marginTop:7,display:"flex",gap:4,flexWrap:"wrap"}}>
-                    {DAYS_SHORT.map(d=><span key={d} style={{fontSize:11,padding:"2px 6px",borderRadius:4,background:e.availability[d]?"#dcfce7":"#f3f4f6",color:e.availability[d]?"#166534":"#9ca3af",fontWeight:e.availability[d]?500:400}}>{d}</span>)}
+                    {DAYS_SHORT.map(d=><span key={d} style={{fontSize:11,padding:"2px 6px",borderRadius:4,background:e.availability[d]?"#dcfce7":"var(--bg-muted)",color:e.availability[d]?"#166534":"var(--text-faint)",fontWeight:e.availability[d]?500:400}}>{d}</span>)}
                   </div>
-                  {e.notes&&<div style={{fontSize:13,color:"#6b7280",marginTop:6}}>{e.notes}</div>}
+                  {e.notes&&<div style={{fontSize:13,color:"var(--text-muted)",marginTop:6}}>{e.notes}</div>}
                 </div>
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0}}>
@@ -858,10 +824,10 @@ export default function App({ auth, demoMode }) {
           <YearSel  val={rYear}  set={setRYear}/>
           <BtnPri onClick={autoGenerate}>Auto-generate</BtnPri>
           <Btn onClick={()=>setClearMonthOpen(true)}>Clear month</Btn>
-          <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden"}}>
+          <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid var(--border-input)",borderRadius:8,overflow:"hidden"}}>
             {[["calendar","Calendar"],["employees","By employee"]].map(([v,label])=>(
               <button key={v} type="button" onClick={()=>setRView(v)}
-                style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"#4f46e5":"#fff",color:rosterView===v?"#fff":"#374151",whiteSpace:"nowrap"}}>
+                style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"var(--accent)":"var(--bg-card)",color:rosterView===v?"var(--on-accent)":"var(--text-secondary)",whiteSpace:"nowrap"}}>
                 {label}
               </button>
             ))}
@@ -883,11 +849,11 @@ export default function App({ auth, demoMode }) {
             })}
           </div>
         )}
-        {(activeProjects.length===0||employees.length===0)&&<div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"#9ca3af",fontSize:14}}>Add projects and employees first to start building the roster.</div>}
+        {(activeProjects.length===0||employees.length===0)&&<div style={{textAlign:"center",padding:32,border:"2px dashed var(--border)",borderRadius:12,color:"var(--text-faint)",fontSize:14}}>Add projects and employees first to start building the roster.</div>}
         {activeProjects.length>0&&employees.length>0&&rosterView==="calendar"&&(
           <div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
-              {DAYS_SHORT.map(d=><div key={d} style={{fontSize:12,fontWeight:600,textAlign:"center",color:"#6b7280",padding:"4px 0"}}>{d}</div>)}
+              {DAYS_SHORT.map(d=><div key={d} style={{fontSize:12,fontWeight:600,textAlign:"center",color:"var(--text-muted)",padding:"4px 0"}}>{d}</div>)}
             </div>
             {weeks.map((week,wi)=>(
               <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
@@ -900,17 +866,17 @@ export default function App({ auth, demoMode }) {
                   return (
                     <div key={day}
                       onClick={()=>{ if(!wknd) setDayEd(day); }}
-                      onMouseEnter={e=>{if(!wknd){e.currentTarget.style.borderColor="#a5b4fc";e.currentTarget.style.boxShadow="0 0 0 3px #eef2ff";}}}
-                      onMouseLeave={e=>{e.currentTarget.style.borderColor="#e5e7eb";e.currentTarget.style.boxShadow="none";}}
-                      style={{border:"1.5px solid #e5e7eb",borderRadius:10,padding:"6px 7px",minHeight:72,background:wknd?"#f9fafb":"#fff",cursor:wknd?"default":"pointer",transition:"border-color 0.12s,box-shadow 0.12s"}}>
-                      <div style={{fontSize:12,fontWeight:600,color:wknd?"#9ca3af":"#374151",marginBottom:4}}>{day}</div>
+                      onMouseEnter={e=>{if(!wknd){e.currentTarget.style.borderColor="var(--accent-muted)";e.currentTarget.style.boxShadow="0 0 0 3px var(--accent-soft)";}}}
+                      onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.boxShadow="none";}}
+                      style={{border:"1.5px solid var(--border)",borderRadius:10,padding:"6px 7px",minHeight:72,background:wknd?"var(--bg-muted)":"var(--bg-card)",cursor:wknd?"default":"pointer",transition:"border-color 0.12s,box-shadow 0.12s"}}>
+                      <div style={{fontSize:12,fontWeight:600,color:wknd?"var(--text-faint)":"var(--text-secondary)",marginBottom:4}}>{day}</div>
                       {!wknd&&Object.entries(byProj).map(([pid,count])=>(
                         <div key={pid} style={{display:"flex",alignItems:"center",gap:3,marginBottom:2}}>
                           <span style={{width:7,height:7,borderRadius:"50%",background:projColor(pid),flexShrink:0}}/>
-                          <span style={{fontSize:10,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{count} · {projNameOf(pid).slice(0,9)}{projNameOf(pid).length>9?"…":""}</span>
+                          <span style={{fontSize:10,color:"var(--text-secondary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{count} · {projNameOf(pid).slice(0,9)}{projNameOf(pid).length>9?"…":""}</span>
                         </div>
                       ))}
-                      {!wknd&&Object.keys(byProj).length===0&&<span style={{fontSize:10,color:"#d1d5db"}}>Tap to add</span>}
+                      {!wknd&&Object.keys(byProj).length===0&&<span style={{fontSize:10,color:"var(--border-input)"}}>Tap to add</span>}
                     </div>
                   );
                 })}
@@ -923,17 +889,17 @@ export default function App({ auth, demoMode }) {
             <table style={{borderCollapse:"collapse",fontSize:12,width:"100%"}}>
               <thead>
                 <tr>
-                  <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",minWidth:140,position:"sticky",left:0,background:"#fff",zIndex:1}}>Employee</th>
+                  <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"var(--text-muted)",borderBottom:"1.5px solid var(--border)",minWidth:140,position:"sticky",left:0,background:"var(--bg-card)",zIndex:1}}>Employee</th>
                   {calDays.map(d=>{
                     const wknd=isWknd(rYear,rMonth,d);
                     return (
-                      <th key={d} style={{padding:"3px 1px",textAlign:"center",color:wknd?"#d1d5db":"#6b7280",fontWeight:500,borderBottom:"1.5px solid #e5e7eb",minWidth:28}}>
+                      <th key={d} style={{padding:"3px 1px",textAlign:"center",color:wknd?"var(--border-input)":"var(--text-muted)",fontWeight:500,borderBottom:"1.5px solid var(--border)",minWidth:28}}>
                         <div style={{fontSize:11}}>{d}</div>
                         <div style={{fontSize:9,marginTop:1}}>{dlabel(rYear,rMonth,d).slice(0,1)}</div>
                       </th>
                     );
                   })}
-                  <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",whiteSpace:"nowrap",minWidth:80}}>Scheduled</th>
+                  <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"var(--text-muted)",borderBottom:"1.5px solid var(--border)",whiteSpace:"nowrap",minWidth:80}}>Scheduled</th>
                 </tr>
               </thead>
               <tbody>
@@ -941,10 +907,10 @@ export default function App({ auth, demoMode }) {
                   const sch=empMonthH(e.id);
                   const pct=e.maxHoursPerMonth>0?Math.round(sch/e.maxHoursPerMonth*100):0;
                   return (
-                    <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6"}}>
-                      <td style={{padding:"8px 12px",fontWeight:500,color:"#111827",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:"#fff",zIndex:1}}>
+                    <tr key={e.id} style={{borderBottom:"1px solid var(--bg-muted)"}}>
+                      <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-primary)",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:"var(--bg-card)",zIndex:1}}>
                         <div>{e.name}</div>
-                        <div style={{fontSize:11,color:"#9ca3af",fontWeight:400}}>{e.role}</div>
+                        <div style={{fontSize:11,color:"var(--text-faint)",fontWeight:400}}>{e.role}</div>
                       </td>
                       {calDays.map(d=>{
                         const wknd=isWknd(rYear,rMonth,d);
@@ -955,15 +921,15 @@ export default function App({ auth, demoMode }) {
                           <td key={d}
                             onClick={()=>{ if(!wknd) setDayEd(d); }}
                             title={pid?`${e.name} → ${projNameOf(pid)}`:undefined}
-                            style={{padding:"3px 1px",textAlign:"center",background:wknd?"#f9fafb":pid?projColor(pid)+"28":"#fff",cursor:wknd?"default":"pointer",borderLeft:"1px solid #f3f4f6"}}>
+                            style={{padding:"3px 1px",textAlign:"center",background:wknd?"var(--bg-muted)":pid?projColor(pid)+"28":"var(--bg-card)",cursor:wknd?"default":"pointer",borderLeft:"1px solid var(--bg-muted)"}}>
                             {pid&&<span style={{display:"block",width:10,height:10,borderRadius:"50%",background:projColor(pid),margin:"0 auto"}}/>}
-                            {!pid&&!wknd&&!avail&&<span style={{color:"#e5e7eb",fontSize:9}}>–</span>}
+                            {!pid&&!wknd&&!avail&&<span style={{color:"var(--border)",fontSize:9}}>–</span>}
                           </td>
                         );
                       })}
                       <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>
-                        <span style={{fontSize:12,fontWeight:600,color:pct>=100?"#dc2626":pct>=80?"#d97706":"#374151"}}>{Math.round(sch/HPD)}d</span>
-                        <span style={{fontSize:11,color:"#9ca3af"}}> / {Math.round(e.maxHoursPerMonth/HPD)}d</span>
+                        <span style={{fontSize:12,fontWeight:600,color:pct>=100?"#dc2626":pct>=80?"#d97706":"var(--text-secondary)"}}>{Math.round(sch/HPD)}d</span>
+                        <span style={{fontSize:11,color:"var(--text-faint)"}}> / {Math.round(e.maxHoursPerMonth/HPD)}d</span>
                       </td>
                     </tr>
                   );
@@ -992,7 +958,7 @@ export default function App({ auth, demoMode }) {
       <div>
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}><MonthSel val={rMonth} set={setRMo}/><YearSel val={rYear} set={setRYear}/></div>
         <div style={cardSt({marginBottom:20})}>
-          <div style={{fontSize:16,fontWeight:600,color:"#111827",marginBottom:14}}>Overall — {MONTHS[rMonth]} {rYear}</div>
+          <div style={{fontSize:16,fontWeight:600,color:"var(--text-primary)",marginBottom:14}}>Overall — {MONTHS[rMonth]} {rYear}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:14}}>
             {[
               {l:"Total capacity",v:fmtH(cap),s:`${employees.length} staff`,danger:false},
@@ -1000,18 +966,18 @@ export default function App({ auth, demoMode }) {
               {l:"Remaining",v:fmtH(Math.max(rem,0)),s:rem<0?"Over capacity":"Available",danger:rem<0},
               {l:"Working days",v:wdInMonth(rYear,rMonth)+"d",s:"this month",danger:false},
             ].map(x=>(
-              <div key={x.l} style={{background:x.danger?"#fef2f2":"#f9fafb",borderRadius:10,padding:"12px 14px",border:`1.5px solid ${x.danger?"#fecaca":"#e5e7eb"}`}}>
-                <div style={{fontSize:12,color:"#6b7280",marginBottom:2}}>{x.l}</div>
-                <div style={{fontSize:22,fontWeight:700,color:x.danger?"#dc2626":"#111827"}}>{x.v}</div>
-                <div style={{fontSize:11,color:x.danger?"#dc2626":"#9ca3af"}}>{x.s}</div>
+              <div key={x.l} style={{background:x.danger?"#fef2f2":"var(--bg-muted)",borderRadius:10,padding:"12px 14px",border:`1.5px solid ${x.danger?"#fecaca":"var(--border)"}`}}>
+                <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:2}}>{x.l}</div>
+                <div style={{fontSize:22,fontWeight:700,color:x.danger?"#dc2626":"var(--text-primary)"}}>{x.v}</div>
+                <div style={{fontSize:11,color:x.danger?"#dc2626":"var(--text-faint)"}}>{x.s}</div>
               </div>
             ))}
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280",marginBottom:4}}><span>Utilisation</span><span style={{fontWeight:500}}>{pct}%</span></div>
-          <ProgBar pct={pct} color="#4f46e5"/>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text-muted)",marginBottom:4}}><span>Utilisation</span><span style={{fontWeight:500}}>{pct}%</span></div>
+          <ProgBar pct={pct} color="var(--accent)"/>
         </div>
-        <div style={{fontSize:14,fontWeight:600,color:"#111827",marginBottom:10}}>By project</div>
-        {activeProjects.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No active projects.</p>}
+        <div style={{fontSize:14,fontWeight:600,color:"var(--text-primary)",marginBottom:10}}>By project</div>
+        {activeProjects.length===0&&<p style={{fontSize:13,color:"var(--text-faint)"}}>No active projects.</p>}
         {activeProjects.map(p=>{
           const manH=projManH(p.id),target=monthAllocH(p,rYear,rMonth),pct2=target>0?Math.round(manH/target*100):0;
           const mb=monthBudgetSlice(p,rYear,rMonth),lc=labourCostM(p.id),rev=revenueM(p),margin=rev!==null&&lc>0?rev-lc:null;
@@ -1027,35 +993,35 @@ export default function App({ auth, demoMode }) {
           return (
             <div key={p.id} style={cardSt({borderLeft:`4px solid ${p.color}`})}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,alignItems:"baseline"}}>
-                <span style={{fontSize:15,fontWeight:600,color:"#111827"}}>{p.name}</span>
-                {p.client&&<span style={{fontSize:12,color:"#6b7280"}}>{p.client}</span>}
+                <span style={{fontSize:15,fontWeight:600,color:"var(--text-primary)"}}>{p.name}</span>
+                {p.client&&<span style={{fontSize:12,color:"var(--text-muted)"}}>{p.client}</span>}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginBottom:10}}>
                 {metrics.map(x=>(
-                  <div key={x.l} style={{background:x.danger?"#fef2f2":"#f9fafb",borderRadius:8,padding:"10px 12px",border:`1px solid ${x.danger?"#fecaca":"#e5e7eb"}`}}>
-                    <div style={{fontSize:11,color:"#6b7280"}}>{x.l}</div>
-                    <div style={{fontSize:17,fontWeight:700,color:x.danger?"#dc2626":"#111827"}}>{x.v}</div>
+                  <div key={x.l} style={{background:x.danger?"#fef2f2":"var(--bg-muted)",borderRadius:8,padding:"10px 12px",border:`1px solid ${x.danger?"#fecaca":"var(--border)"}`}}>
+                    <div style={{fontSize:11,color:"var(--text-muted)"}}>{x.l}</div>
+                    <div style={{fontSize:17,fontWeight:700,color:x.danger?"#dc2626":"var(--text-primary)"}}>{x.v}</div>
                   </div>
                 ))}
               </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280",marginBottom:3}}><span>Progress</span><span style={{fontWeight:500}}>{pct2}%</span></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text-muted)",marginBottom:3}}><span>Progress</span><span style={{fontWeight:500}}>{pct2}%</span></div>
               <ProgBar pct={pct2} color={p.color}/>
             </div>
           );
         })}
-        <div style={{fontSize:14,fontWeight:600,color:"#111827",margin:"20px 0 10px"}}>By employee</div>
-        {employees.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No employees yet.</p>}
+        <div style={{fontSize:14,fontWeight:600,color:"var(--text-primary)",margin:"20px 0 10px"}}>By employee</div>
+        {employees.length===0&&<p style={{fontSize:13,color:"var(--text-faint)"}}>No employees yet.</p>}
         {employees.map(e=>{
           const sch=empMonthH(e.id),pct3=e.maxHoursPerMonth>0?Math.round(sch/e.maxHoursPerMonth*100):0;
           return (
             <div key={e.id} style={cardSt({display:"flex",gap:12,alignItems:"center",padding:"12px 16px"})}>
-              <Avatar name={e.name} color="#4f46e5"/>
+              <Avatar name={e.name} color="var(--accent)"/>
               <div style={{flex:1}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
-                  <span style={{fontWeight:600,fontSize:14,color:"#111827"}}>{e.name} <span style={{fontSize:12,color:"#6b7280",fontWeight:400}}>{e.role}</span></span>
-                  <span style={{fontSize:13,color:pct3>=100?"#dc2626":"#6b7280",fontWeight:500}}>{Math.round(sch/HPD)}d / {Math.round(e.maxHoursPerMonth/HPD)}d · {pct3}%</span>
+                  <span style={{fontWeight:600,fontSize:14,color:"var(--text-primary)"}}>{e.name} <span style={{fontSize:12,color:"var(--text-muted)",fontWeight:400}}>{e.role}</span></span>
+                  <span style={{fontSize:13,color:pct3>=100?"#dc2626":"var(--text-muted)",fontWeight:500}}>{Math.round(sch/HPD)}d / {Math.round(e.maxHoursPerMonth/HPD)}d · {pct3}%</span>
                 </div>
-                <ProgBar pct={pct3} color="#4f46e5"/>
+                <ProgBar pct={pct3} color="var(--accent)"/>
               </div>
             </div>
           );
@@ -1070,7 +1036,7 @@ export default function App({ auth, demoMode }) {
     return (
       <div>
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}><MonthSel val={rMonth} set={setRMo}/><YearSel val={rYear} set={setRYear}/></div>
-        {activeProjects.length===0&&<p style={{fontSize:13,color:"#9ca3af"}}>No active projects to summarise.</p>}
+        {activeProjects.length===0&&<p style={{fontSize:13,color:"var(--text-faint)"}}>No active projects to summarise.</p>}
         {activeProjects.map(p=>{
           const manH=projManH(p.id),target=monthAllocH(p,rYear,rMonth),pct=target>0?Math.round(manH/target*100):0;
           const staff=employees.filter(e=>calDays.some(d=>getA(rYear,rMonth,d,e.id)===p.id));
@@ -1078,14 +1044,14 @@ export default function App({ auth, demoMode }) {
           return (
             <div key={p.id} style={cardSt({borderLeft:`4px solid ${p.color}`})}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
-                <span style={{fontSize:15,fontWeight:600,color:"#111827"}}>{p.name}</span>
-                {p.client&&<span style={{fontSize:13,color:"#6b7280"}}>{p.client}</span>}
+                <span style={{fontSize:15,fontWeight:600,color:"var(--text-primary)"}}>{p.name}</span>
+                {p.client&&<span style={{fontSize:13,color:"var(--text-muted)"}}>{p.client}</span>}
               </div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-                {staff.map(e=>{ const days=calDays.filter(d=>getA(rYear,rMonth,d,e.id)===p.id).length; return <span key={e.id} style={{fontSize:13,padding:"4px 10px",borderRadius:99,background:"#f3f4f6",color:"#374151",border:"1px solid #e5e7eb"}}>{e.name} · {days}d · {days*HPD}h</span>; })}
-                {staff.length===0&&<span style={{fontSize:13,color:"#9ca3af"}}>No staff assigned this month</span>}
+                {staff.map(e=>{ const days=calDays.filter(d=>getA(rYear,rMonth,d,e.id)===p.id).length; return <span key={e.id} style={{fontSize:13,padding:"4px 10px",borderRadius:99,background:"var(--bg-muted)",color:"var(--text-secondary)",border:"1px solid var(--border)"}}>{e.name} · {days}d · {days*HPD}h</span>; })}
+                {staff.length===0&&<span style={{fontSize:13,color:"var(--text-faint)"}}>No staff assigned this month</span>}
               </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"#6b7280",marginBottom:3}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"var(--text-muted)",marginBottom:3}}>
                 <span>{isH?`${fmtH(manH)} of ${fmtH(target)}`:`${Math.round(manH/HPD)}d of ${Math.round(target/HPD)}d`} target</span>
                 <span style={{fontWeight:500}}>{pct}%</span>
               </div>
@@ -1099,7 +1065,7 @@ export default function App({ auth, demoMode }) {
 
   // ── RENDER ───────────────────────────────────────────────────────────────────
   if(loading) return(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontFamily:"system-ui",fontSize:14,color:"#6b7280"}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontFamily:"system-ui",fontSize:14,color:"var(--text-muted)",background:"var(--bg-page)"}}>
       Loading…
     </div>
   );
@@ -1109,39 +1075,85 @@ export default function App({ auth, demoMode }) {
     if (!auth || !auth.profile) return false;
     const role = auth.profile.role;
     if (t === "Admin") return role === "admin";
+    if (t === "Settings") return ["admin", "manager"].includes(role);
+    if (t === "Reports") return ["admin", "manager", "dispatcher"].includes(role);
+    if (t === "PTO") return true;
     if (t === "Capacity") return ["admin", "manager"].includes(role);
     if (t === "Summary") return ["admin", "manager", "dispatcher"].includes(role);
     if (t === "Roster") return ["admin", "manager", "dispatcher"].includes(role);
+    if (t === "Scheduler") return ["admin", "manager", "dispatcher"].includes(role);
     return true;
   });
 
   const effectiveTab = visibleTabs.includes(tab) ? tab : visibleTabs[0] || "Projects";
 
   return (
-    <div style={{fontFamily:"system-ui,-apple-system,sans-serif",padding:"1rem",maxWidth:1100,margin:"0 auto",color:"#111827"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+    <div style={{fontFamily:"system-ui,-apple-system,sans-serif",padding:"1rem",maxWidth:1100,margin:"0 auto",color:"var(--text-primary)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,gap:12,flexWrap:"wrap"}}>
         <div>
-          <h2 style={{fontSize:24,fontWeight:700,margin:"0 0 4px",color:"#111827"}}>Roster manager</h2>
-          <p style={{fontSize:13,color:"#6b7280",margin:0}}>7:00 am – 3:30 pm · 8h days</p>
+          <h2 style={{fontSize:24,fontWeight:700,margin:"0 0 4px",color:"var(--text-primary)"}}>Roster manager</h2>
+          <p style={{fontSize:13,color:"var(--text-muted)",margin:0}}>7:00 am – 3:30 pm · 8h days</p>
         </div>
-        {auth && <UserMenu auth={auth}/>}
+        <div style={{display:"flex",alignItems:"center",gap:10,marginLeft:"auto"}}>
+          {auth?.user && <NotificationCenter />}
+          {auth && <UserMenu auth={auth}/>}
+        </div>
       </div>
 
-      <div style={{display:"flex",borderBottom:"1.5px solid #e5e7eb",marginBottom:20,overflowX:"auto"}}>
-        {visibleTabs.map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"10px 16px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",fontSize:14,color:effectiveTab===t?"#111827":"#6b7280",borderBottom:effectiveTab===t?"2px solid #4f46e5":"2px solid transparent",marginBottom:-1,fontWeight:effectiveTab===t?600:400,whiteSpace:"nowrap"}}>{t}</button>)}
+      <div style={{display:"flex",borderBottom:"1.5px solid var(--border)",marginBottom:20,overflowX:"auto"}}>
+        {visibleTabs.map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"10px 16px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",fontSize:14,color:effectiveTab===t?"var(--text-primary)":"var(--text-muted)",borderBottom:effectiveTab===t?"2px solid var(--accent)":"2px solid transparent",marginBottom:-1,fontWeight:effectiveTab===t?600:400,whiteSpace:"nowrap"}}>{t}</button>)}
       </div>
 
       {effectiveTab==="Projects"  && <ProjectsTab/>}
       {effectiveTab==="Employees" && <EmployeesTab/>}
-      {effectiveTab==="Scheduler"  && <SchedulerDragDrop/>}
+      {effectiveTab==="Scheduler"  && <SchedulerDragDrop />}
       {effectiveTab==="Roster"    && <RosterTab/>}
       {effectiveTab==="Capacity"  && <CapacityTab/>}
       {effectiveTab==="Summary"   && <SummaryTab/>}
+      {effectiveTab==="Settings" && (
+        <SettingsTab
+          employees={employees}
+          setEmployees={setEmps}
+          certifications={certifications}
+          setCertifications={setCertifications}
+          shiftRules={shiftRules}
+          setShiftRules={setShiftRules}
+          userProfiles={userProfiles}
+          setUserProfiles={setUserProfiles}
+          assignments={assigns}
+          projects={projects}
+          showToast={showToast}
+          supabase={supabase}
+          year={rYear}
+          month={rMonth}
+        />
+      )}
+      {effectiveTab==="Reports" && (
+        <ReportsTab
+          projects={projects}
+          employees={employees}
+          assigns={assigns}
+          timesheets={timesheets}
+          rYear={rYear}
+          rMonth={rMonth}
+          setRMo={setRMo}
+          setRYear={setRYear}
+          showToast={showToast}
+          calDays={calDays}
+          getA={getA}
+        />
+      )}
+      {effectiveTab==="PTO" && (
+        <PTOTab employeeId={linkedEmployeeId} userRole={auth.profile?.role || "employee"} />
+      )}
+      {effectiveTab==="Admin" && (
+        <AdminTab auth={auth} showToast={showToast} />
+      )}
       {dayEd   !== null && <DayEditorModal day={dayEd}/>}
       {projMod !== null && <ProjectModal key={pTick}/>}
       {empMod  !== null && <EmployeeModal key={eTick}/>}
       {toast&&(
-        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"#1f2937",color:"#fff",padding:"12px 20px",borderRadius:10,fontSize:13,zIndex:1000,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",maxWidth:400,textAlign:"center",pointerEvents:"none"}}>
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"var(--toast-bg)",color:"var(--toast-fg)",padding:"12px 20px",borderRadius:10,fontSize:13,zIndex:1000,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",maxWidth:400,textAlign:"center",pointerEvents:"none"}}>
           {toast}
         </div>
       )}

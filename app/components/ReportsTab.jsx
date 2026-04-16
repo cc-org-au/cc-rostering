@@ -409,8 +409,8 @@ export default function ReportsTab({
               onClick={() => setReportType(rt.id)}
               style={{
                 padding: "8px 14px",
-                background: reportType === rt.id ? "#4f46e5" : "#fff",
-                color: reportType === rt.id ? "#fff" : "#374151",
+                background: reportType === rt.id ? "var(--accent)" : "#fff",
+                color: reportType === rt.id ? "#fff" : "var(--text-secondary)",
                 border: reportType === rt.id ? "2px solid #4f46e5" : "1.5px solid #d1d5db",
                 borderRadius: 8,
                 fontSize: 13,
@@ -447,7 +447,7 @@ export default function ReportsTab({
       {/* ── Financial Report ── */}
       {reportType === "financial" && financialData && (
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
             💰 Financial Report — {MONTHS[rMonth]} {rYear}
           </div>
 
@@ -461,22 +461,22 @@ export default function ReportsTab({
             ].map(x => (
               <div key={x.l} style={cardSt({ marginBottom: 0 })}>
                 <SecTitle>{x.l}</SecTitle>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#111827" }}>{x.v}</div>
-                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{x.s}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}>{x.v}</div>
+                <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 4 }}>{x.s}</div>
               </div>
             ))}
           </div>
 
           {/* Project profitability table */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>Project Profitability</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Project Profitability</div>
             {financialData.prof && financialData.prof.length > 0 ? (
               <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: "#f9fafb" }}>
+                    <tr style={{ background: "var(--bg-muted)" }}>
                       {["Project", "Client", "Revenue", "Cost", "Margin", "Margin %"].map(h => (
-                        <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
+                        <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
                           {h}
                         </th>
                       ))}
@@ -485,8 +485,8 @@ export default function ReportsTab({
                   <tbody>
                     {financialData.prof.map(p => (
                       <tr key={p.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 14px", fontWeight: 500, color: "#111827" }}>{p.name}</td>
-                        <td style={{ padding: "10px 14px", color: "#6b7280" }}>{p.client || "-"}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--text-primary)" }}>{p.name}</td>
+                        <td style={{ padding: "10px 14px", color: "var(--text-muted)" }}>{p.client || "-"}</td>
                         <td style={{ padding: "10px 14px", color: "#059669", fontWeight: 500 }}>{fmt$(p.revenue)}</td>
                         <td style={{ padding: "10px 14px", color: "#dc2626" }}>{fmt$(p.actual_cost)}</td>
                         <td style={{ padding: "10px 14px", fontWeight: 500, color: p.margin >= 0 ? "#059669" : "#dc2626" }}>{fmt$(p.margin)}</td>
@@ -499,7 +499,7 @@ export default function ReportsTab({
                 </table>
               </div>
             ) : (
-              <p style={{ fontSize: 13, color: "#9ca3af" }}>No project data available.</p>
+              <p style={{ fontSize: 13, color: "var(--text-faint)" }}>No project data available.</p>
             )}
           </div>
         </div>
@@ -508,7 +508,7 @@ export default function ReportsTab({
       {/* ── Utilization Report ── */}
       {reportType === "utilization" && utilizationData && (
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
             📊 Utilization Report — {MONTHS[rMonth]} {rYear}
           </div>
 
@@ -519,11 +519,11 @@ export default function ReportsTab({
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 24, fontWeight: 700, color: "#059669" }}>{utilizationData.billable.billable_pct}%</div>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>Billable: {fmtH(utilizationData.billable.billable_hours)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Billable: {fmtH(utilizationData.billable.billable_hours)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: "#9ca3af" }}>{100 - utilizationData.billable.billable_pct}%</div>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>Non-billable: {fmtH(utilizationData.billable.non_billable_hours)}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-faint)" }}>{100 - utilizationData.billable.billable_pct}%</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Non-billable: {fmtH(utilizationData.billable.non_billable_hours)}</div>
                 </div>
               </div>
               <div style={{ marginTop: 12 }}>
@@ -540,7 +540,7 @@ export default function ReportsTab({
                 {utilizationData.overalloc.map(e => (
                   <div key={e.id} style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid #fee2e2" }}>
                     <div style={{ fontWeight: 500, color: "#dc2626" }}>{e.name} — {e.utilization_pct}%</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>+{fmtH(e.overallocated_hours)} over limit</div>
+                    <div style={{ fontSize: 11, color: "var(--text-faint)" }}>+{fmtH(e.overallocated_hours)} over limit</div>
                   </div>
                 ))}
               </div>
@@ -552,7 +552,7 @@ export default function ReportsTab({
                 {utilizationData.underutil.slice(0, 5).map(e => (
                   <div key={e.id} style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid #e0f2fe" }}>
                     <div style={{ fontWeight: 500, color: "#0c63e4" }}>{e.name} — {e.utilization_pct}%</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{fmtH(e.available_capacity)} available</div>
+                    <div style={{ fontSize: 11, color: "var(--text-faint)" }}>{fmtH(e.available_capacity)} available</div>
                   </div>
                 ))}
               </div>
@@ -562,13 +562,13 @@ export default function ReportsTab({
           {/* Employee util table */}
           {utilizationData.empUtil && utilizationData.empUtil.length > 0 && (
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>Employee Utilization</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Employee Utilization</div>
               <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: "#f9fafb" }}>
+                    <tr style={{ background: "var(--bg-muted)" }}>
                       {["Name", "Role", "Assigned", "Available", "Utilization", "Status"].map(h => (
-                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid #e5e7eb" }}>
+                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid #e5e7eb" }}>
                           {h}
                         </th>
                       ))}
@@ -577,10 +577,10 @@ export default function ReportsTab({
                   <tbody>
                     {utilizationData.empUtil.map(e => (
                       <tr key={e.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 12px", fontWeight: 500, color: "#111827" }}>{e.name}</td>
-                        <td style={{ padding: "10px 12px", color: "#6b7280", fontSize: 11 }}>{e.role}</td>
-                        <td style={{ padding: "10px 12px", color: "#374151" }}>{fmtH(e.assigned_hours)}</td>
-                        <td style={{ padding: "10px 12px", color: "#9ca3af" }}>{fmtH(e.available_hours)}</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--text-primary)" }}>{e.name}</td>
+                        <td style={{ padding: "10px 12px", color: "var(--text-muted)", fontSize: 11 }}>{e.role}</td>
+                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{fmtH(e.assigned_hours)}</td>
+                        <td style={{ padding: "10px 12px", color: "var(--text-faint)" }}>{fmtH(e.available_hours)}</td>
                         <td style={{ padding: "10px 12px", fontWeight: 600, color: e.utilization_pct >= 100 ? "#dc2626" : e.utilization_pct >= 80 ? "#d97706" : "#059669" }}>
                           {e.utilization_pct}%
                         </td>
@@ -602,7 +602,7 @@ export default function ReportsTab({
       {/* ── Headcount Report ── */}
       {reportType === "headcount" && headcountData && (
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
             👥 Headcount Report — {MONTHS[rMonth]} {rYear}
           </div>
 
@@ -616,8 +616,8 @@ export default function ReportsTab({
               ].map(x => (
                 <div key={x.l} style={cardSt({ marginBottom: 0 })}>
                   <SecTitle>{x.l}</SecTitle>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{x.v}</div>
-                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{x.s}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>{x.v}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 4 }}>{x.s}</div>
                 </div>
               ))}
             </div>
@@ -628,12 +628,12 @@ export default function ReportsTab({
               <SecTitle>Capacity vs Demand</SecTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>Available Capacity</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "#111827" }}>{fmtH(headcountData.capVsDemand.total_capacity)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Available Capacity</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>{fmtH(headcountData.capVsDemand.total_capacity)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>Currently Assigned</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "#4f46e5" }}>{fmtH(headcountData.capVsDemand.current_assigned)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Currently Assigned</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)" }}>{fmtH(headcountData.capVsDemand.current_assigned)}</div>
                 </div>
               </div>
               <div style={{ fontSize: 13, color: headcountData.capVsDemand.gap > 0 ? "#059669" : "#dc2626", fontWeight: 500, marginBottom: 8 }}>
@@ -645,13 +645,13 @@ export default function ReportsTab({
 
           {headcountData.byRole && headcountData.byRole.length > 0 && (
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>Headcount by Role</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Headcount by Role</div>
               <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: "#f9fafb" }}>
+                    <tr style={{ background: "var(--bg-muted)" }}>
                       {["Role", "Count", "Avg Rate", "Total Capacity"].map(h => (
-                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid #e5e7eb" }}>
+                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid #e5e7eb" }}>
                           {h}
                         </th>
                       ))}
@@ -660,10 +660,10 @@ export default function ReportsTab({
                   <tbody>
                     {headcountData.byRole.map(r => (
                       <tr key={r.role} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 12px", fontWeight: 500, color: "#111827" }}>{r.role}</td>
-                        <td style={{ padding: "10px 12px", color: "#374151" }}>{r.count}</td>
-                        <td style={{ padding: "10px 12px", color: "#6b7280" }}>${r.avg_rate}/hr</td>
-                        <td style={{ padding: "10px 12px", color: "#4f46e5", fontWeight: 500 }}>{fmtH(r.total_capacity)}</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--text-primary)" }}>{r.role}</td>
+                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{r.count}</td>
+                        <td style={{ padding: "10px 12px", color: "var(--text-muted)" }}>${r.avg_rate}/hr</td>
+                        <td style={{ padding: "10px 12px", color: "var(--accent)", fontWeight: 500 }}>{fmtH(r.total_capacity)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -677,7 +677,7 @@ export default function ReportsTab({
       {/* ── Projects Report ── */}
       {reportType === "projects" && projectsData && (
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
             🎯 Project Status Report — {MONTHS[rMonth]} {rYear}
           </div>
 
@@ -688,16 +688,16 @@ export default function ReportsTab({
                 const statusBg = p.status === "on-track" ? "#f0fdf4" : p.status === "finishing" ? "#fffbeb" : "#fef2f2";
                 return (
                   <div key={p.id} style={cardSt({ background: statusBg, borderLeft: `4px solid ${statusColor}` })}>
-                    <div style={{ fontWeight: 600, color: "#111827", marginBottom: 8 }}>{p.name}</div>
-                    {p.client && <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>Client: {p.client}</div>}
+                    <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>{p.name}</div>
+                    {p.client && <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Client: {p.client}</div>}
                     <div style={{ fontSize: 13, color: statusColor, fontWeight: 500, marginBottom: 8, textTransform: "capitalize" }}>
                       ● {p.status.replace(/-/g, " ")}
                     </div>
-                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>
                       Budget spent: {p.pct_budget_spent}%
                     </div>
                     <ProgBar pct={p.pct_budget_spent} />
-                    {p.days_remaining > 0 && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>
+                    {p.days_remaining > 0 && <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 6 }}>
                       {p.days_remaining} days remaining
                     </div>}
                   </div>
@@ -711,7 +711,7 @@ export default function ReportsTab({
       {/* ── Compliance Report ── */}
       {reportType === "compliance" && complianceData && (
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
             ✅ Compliance Report — {MONTHS[rMonth]} {rYear}
           </div>
 
@@ -720,12 +720,12 @@ export default function ReportsTab({
               <SecTitle>Risk Level: <span style={{ textTransform: "uppercase", color: complianceData.summary.risk_level === "critical" ? "#dc2626" : complianceData.summary.risk_level === "high" ? "#d97706" : "#059669" }}>{complianceData.summary.risk_level}</span></SecTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: "#111827" }}>{complianceData.summary.total_violations}</div>
-                  <div style={{ fontSize: 11, color: "#6b7280" }}>Total violations</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}>{complianceData.summary.total_violations}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Total violations</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: "#dc2626" }}>{complianceData.summary.critical_issues}</div>
-                  <div style={{ fontSize: 11, color: "#6b7280" }}>Critical issues</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Critical issues</div>
                 </div>
               </div>
             </div>
@@ -737,7 +737,7 @@ export default function ReportsTab({
               {complianceData.hoursViolations.map(v => (
                 <div key={v.id} style={{ padding: "8px 0", fontSize: 12, borderBottom: "1px solid #fecaca" }}>
                   <div style={{ fontWeight: 500, color: "#dc2626" }}>{v.name} — {v.hours_worked}h / {v.max_hours}h</div>
-                  <div style={{ fontSize: 11, color: "#9ca3af" }}>+{v.violation_hours}h over ({v.violation_pct}%) • Severity: {v.severity}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-faint)" }}>+{v.violation_hours}h over ({v.violation_pct}%) • Severity: {v.severity}</div>
                 </div>
               ))}
             </div>
@@ -749,7 +749,7 @@ export default function ReportsTab({
               {complianceData.skillMismatches.slice(0, 5).map((m, i) => (
                 <div key={i} style={{ padding: "8px 0", fontSize: 12, borderBottom: "1px solid #fcd34d" }}>
                   <div style={{ fontWeight: 500, color: "#92400e" }}>{m.employee} → {m.project}</div>
-                  <div style={{ fontSize: 11, color: "#9ca3af" }}>Missing: {m.missing_skills.join(", ")} ({m.coverage_pct}% coverage)</div>
+                  <div style={{ fontSize: 11, color: "var(--text-faint)" }}>Missing: {m.missing_skills.join(", ")} ({m.coverage_pct}% coverage)</div>
                 </div>
               ))}
             </div>
@@ -760,23 +760,23 @@ export default function ReportsTab({
       {/* ── Forecasts Report ── */}
       {reportType === "forecasts" && forecastsData && (
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
             🔮 Forecasts Report — {MONTHS[rMonth]} {rYear}
           </div>
 
           {forecastsData.gaps && forecastsData.gaps.length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>Resource Gaps (3 months)</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Resource Gaps (3 months)</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {forecastsData.gaps.map(g => (
-                  <div key={`${g.year}-${g.month}`} style={cardSt({ background: g.risk_level === "critical" ? "#fee2e2" : g.risk_level === "high" ? "#fffbeb" : "#f9fafb" })}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", marginBottom: 8 }}>
+                  <div key={`${g.year}-${g.month}`} style={cardSt({ background: g.risk_level === "critical" ? "#fee2e2" : g.risk_level === "high" ? "#fffbeb" : "var(--bg-muted)" })}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
                       {MONTHS[g.month]} {g.year}
                     </div>
                     <div style={{ fontSize: 20, fontWeight: 700, color: g.gap_pct > 0 ? "#dc2626" : "#059669", marginBottom: 4 }}>
                       {g.gap_pct}% gap
                     </div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
                       {fmtH(g.gap_hours)} hours needed
                     </div>
                     <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 500, background: g.risk_level === "critical" ? "#fecaca" : g.risk_level === "high" ? "#fcd34d" : "#bbf7d0", color: g.risk_level === "critical" ? "#dc2626" : g.risk_level === "high" ? "#92400e" : "#166534" }}>
@@ -793,8 +793,8 @@ export default function ReportsTab({
               <SecTitle>📉 Attrition Risk (Top Concerns)</SecTitle>
               {forecastsData.attritionRisk.filter(a => a.risk_level !== "low").slice(0, 5).map(a => (
                 <div key={a.id} style={{ padding: "10px 0", fontSize: 12, borderBottom: "1px solid #e5e7eb" }}>
-                  <div style={{ fontWeight: 500, color: "#111827" }}>{a.name}</div>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
+                  <div style={{ fontWeight: 500, color: "var(--text-primary)" }}>{a.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
                     Risk score: {a.risk_score} ({a.risk_level}) • {a.risk_factors.join(", ")}
                   </div>
                 </div>
@@ -808,7 +808,7 @@ export default function ReportsTab({
       {/* ── Original Payroll Summary (kept for backward compatibility) ── */}
       {reportType === "financial" && (
         <>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 32, marginBottom: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginTop: 32, marginBottom: 16 }}>
             📋 Classic Payroll Summary
           </div>
 
@@ -824,8 +824,8 @@ export default function ReportsTab({
             {/* Total rostered hours */}
             <div style={cardSt({ marginBottom: 0 })}>
               <SecTitle>Total rostered</SecTitle>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{fmtH(totalRosteredH)}</div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>{fmtH(totalRosteredH)}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                 {Math.round(totalRosteredH / HPD)} days this month
               </div>
             </div>
@@ -833,32 +833,32 @@ export default function ReportsTab({
             {/* Actual hours worked */}
             <div style={cardSt({ marginBottom: 0 })}>
               <SecTitle>Actual hours worked</SecTitle>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{fmtH(totalActualH)}</div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>{fmtH(totalActualH)}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                 approved + submitted timesheets
               </div>
             </div>
 
             {/* Variance */}
-            <div style={cardSt({ marginBottom: 0, background: totalVariance < 0 ? "#fef2f2" : totalVariance > 0 ? "#f0fdf4" : "#fff", borderColor: totalVariance < 0 ? "#fecaca" : totalVariance > 0 ? "#bbf7d0" : "#e5e7eb" })}>
+            <div style={cardSt({ marginBottom: 0, background: totalVariance < 0 ? "#fef2f2" : totalVariance > 0 ? "#f0fdf4" : "#fff", borderColor: totalVariance < 0 ? "#fecaca" : totalVariance > 0 ? "#bbf7d0" : "var(--border)" })}>
               <SecTitle>Variance</SecTitle>
               <div style={{
                 fontSize: 28,
                 fontWeight: 700,
-                color: totalVariance < 0 ? "#dc2626" : totalVariance > 0 ? "#059669" : "#111827",
+                color: totalVariance < 0 ? "#dc2626" : totalVariance > 0 ? "#059669" : "var(--text-primary)",
               }}>
                 {totalVariance >= 0 ? "+" : ""}{fmtH(totalVariance)}
               </div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>actual vs rostered</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>actual vs rostered</div>
             </div>
 
             {/* Utilisation */}
             <div style={cardSt({ marginBottom: 0 })}>
               <SecTitle>Utilisation</SecTitle>
-              <div style={{ fontSize: 28, fontWeight: 700, color: utilisation >= 100 ? "#dc2626" : utilisation >= 80 ? "#d97706" : "#111827" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: utilisation >= 100 ? "#dc2626" : utilisation >= 80 ? "#d97706" : "var(--text-primary)" }}>
                 {utilisation}%
               </div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>of total capacity</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>of total capacity</div>
               <ProgBar pct={utilisation} />
             </div>
           </div>
@@ -875,7 +875,7 @@ export default function ReportsTab({
                   <Tag bg="#fef3c7" col="#92400e">{overtimeAlerts.length} alert{overtimeAlerts.length !== 1 ? "s" : ""}</Tag>
                 )}
               </div>
-              <span style={{ fontSize: 13, color: "#6b7280", userSelect: "none" }}>
+              <span style={{ fontSize: 13, color: "var(--text-muted)", userSelect: "none" }}>
                 {overtimeOpen ? "▲ Hide" : "▼ Show"}
               </span>
             </div>
@@ -902,15 +902,15 @@ export default function ReportsTab({
 
           {/* ── 4. Scheduled vs Actual table ── */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>
               Scheduled vs Actual — {MONTHS[rMonth]} {rYear}
             </div>
             <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
               <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: "#f9fafb" }}>
+                  <tr style={{ background: "var(--bg-muted)" }}>
                     {["Employee", "Rostered Days", "Rostered Hours", "Actual Hours", "Variance", "Utilisation %"].map(h => (
-                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
                         {h}
                       </th>
                     ))}
@@ -919,26 +919,26 @@ export default function ReportsTab({
                 <tbody>
                   {employees.length === 0 && (
                     <tr>
-                      <td colSpan={6} style={{ padding: "24px 14px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                      <td colSpan={6} style={{ padding: "24px 14px", textAlign: "center", color: "var(--text-faint)", fontSize: 13 }}>
                         No employees to display.
                       </td>
                     </tr>
                   )}
                   {empRows.map(({ emp, rosteredDays, rosteredH, actualH, variance, util }) => (
                     <tr key={emp.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                      <td style={{ padding: "10px 14px", fontWeight: 500, color: "#111827", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
                         <div>{emp.name}</div>
-                        <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400 }}>{emp.role}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 400 }}>{emp.role}</div>
                       </td>
-                      <td style={{ padding: "10px 14px", color: "#374151" }}>{rosteredDays}d</td>
-                      <td style={{ padding: "10px 14px", color: "#374151" }}>{fmtH(rosteredH)}</td>
-                      <td style={{ padding: "10px 14px", color: "#374151" }}>{fmtH(actualH)}</td>
+                      <td style={{ padding: "10px 14px", color: "var(--text-secondary)" }}>{rosteredDays}d</td>
+                      <td style={{ padding: "10px 14px", color: "var(--text-secondary)" }}>{fmtH(rosteredH)}</td>
+                      <td style={{ padding: "10px 14px", color: "var(--text-secondary)" }}>{fmtH(actualH)}</td>
                       <td style={{ padding: "10px 14px", ...varianceCellStyle(variance) }}>
                         {variance >= 0 ? "+" : ""}{fmtH(variance)}
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ color: util >= 100 ? "#dc2626" : util >= 80 ? "#d97706" : "#374151", fontWeight: 500 }}>{util}%</span>
+                          <span style={{ color: util >= 100 ? "#dc2626" : util >= 80 ? "#d97706" : "var(--text-secondary)", fontWeight: 500 }}>{util}%</span>
                           <div style={{ flex: 1, minWidth: 60 }}>
                             <ProgBar pct={util} />
                           </div>
@@ -949,15 +949,15 @@ export default function ReportsTab({
                 </tbody>
                 {employees.length > 0 && (
                   <tfoot>
-                    <tr style={{ background: "#f9fafb", borderTop: "1.5px solid #e5e7eb" }}>
-                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "#111827" }}>Totals</td>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, color: "#111827" }}>{totals.rosteredDays}d</td>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, color: "#111827" }}>{fmtH(totals.rosteredH)}</td>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, color: "#111827" }}>{fmtH(totals.actualH)}</td>
+                    <tr style={{ background: "var(--bg-muted)", borderTop: "1.5px solid #e5e7eb" }}>
+                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "var(--text-primary)" }}>Totals</td>
+                      <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-primary)" }}>{totals.rosteredDays}d</td>
+                      <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-primary)" }}>{fmtH(totals.rosteredH)}</td>
+                      <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-primary)" }}>{fmtH(totals.actualH)}</td>
                       <td style={{ padding: "10px 14px", fontWeight: 600, ...varianceCellStyle(totals.variance) }}>
                         {totals.variance >= 0 ? "+" : ""}{fmtH(totals.variance)}
                       </td>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, color: totalUtil >= 100 ? "#dc2626" : totalUtil >= 80 ? "#d97706" : "#374151" }}>
+                      <td style={{ padding: "10px 14px", fontWeight: 600, color: totalUtil >= 100 ? "#dc2626" : totalUtil >= 80 ? "#d97706" : "var(--text-secondary)" }}>
                         {totalUtil}%
                       </td>
                     </tr>
@@ -969,11 +969,11 @@ export default function ReportsTab({
 
           {/* ── 5. Project financial summary ── */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>
               Project financial summary — {MONTHS[rMonth]} {rYear}
             </div>
             {projects.length === 0 && (
-              <div style={{ padding: "32px 24px", border: "2px dashed #e5e7eb", borderRadius: 12, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+              <div style={{ padding: "32px 24px", border: "2px dashed #e5e7eb", borderRadius: 12, textAlign: "center", color: "var(--text-faint)", fontSize: 13 }}>
                 No projects to display.
               </div>
             )}
@@ -981,8 +981,8 @@ export default function ReportsTab({
               <div key={p.id} style={cardSt({ borderLeft: `4px solid ${p.color}` })}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
                   <div>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>{p.name}</span>
-                    {p.client && <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>{p.client}</span>}
+                    <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{p.name}</span>
+                    {p.client && <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 8 }}>{p.client}</span>}
                   </div>
                   <Tag
                     bg={pct >= 100 ? "#fee2e2" : pct >= 80 ? "#fef9c3" : "#dcfce7"}
@@ -993,34 +993,34 @@ export default function ReportsTab({
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 12 }}>
-                  <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Rostered man-hours</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmtH(manH)}</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>of {fmtH(allocH)} target</div>
+                  <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Rostered man-hours</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmtH(manH)}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-faint)" }}>of {fmtH(allocH)} target</div>
                   </div>
 
                   {labourCost > 0 && (
-                    <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
-                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Labour cost</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmt$(labourCost)}</div>
-                      {budget && <div style={{ fontSize: 11, color: labourCost > budget ? "#dc2626" : "#9ca3af" }}>budget: {fmt$(budget)}</div>}
+                    <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Labour cost</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt$(labourCost)}</div>
+                      {budget && <div style={{ fontSize: 11, color: labourCost > budget ? "#dc2626" : "var(--text-faint)" }}>budget: {fmt$(budget)}</div>}
                     </div>
                   )}
 
                   {revenue !== null && (
                     <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "10px 12px", border: "1px solid #bbf7d0" }}>
-                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Revenue</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmt$(revenue)}</div>
-                      <div style={{ fontSize: 11, color: "#9ca3af" }}>@ ${p.chargeOutRate}/hr</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Revenue</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt$(revenue)}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-faint)" }}>@ ${p.chargeOutRate}/hr</div>
                     </div>
                   )}
 
                   {margin !== null && (
                     <div style={{ background: margin >= 0 ? "#f0fdf4" : "#fef2f2", borderRadius: 8, padding: "10px 12px", border: `1px solid ${margin >= 0 ? "#bbf7d0" : "#fecaca"}` }}>
-                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Margin</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Margin</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: margin >= 0 ? "#059669" : "#dc2626" }}>{fmt$(margin)}</div>
                       {revenue && revenue > 0 && (
-                        <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                        <div style={{ fontSize: 11, color: "var(--text-faint)" }}>
                           {Math.round((margin / revenue) * 100)}% of revenue
                         </div>
                       )}
@@ -1028,14 +1028,14 @@ export default function ReportsTab({
                   )}
 
                   {budget && !labourCost && (
-                    <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
-                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Monthly budget slice</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmt$(budget)}</div>
+                    <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Monthly budget slice</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt$(budget)}</div>
                     </div>
                   )}
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280", marginBottom: 3 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>
                   <span>Roster progress</span>
                   <span style={{ fontWeight: 500 }}>{pct}%</span>
                 </div>
@@ -1043,9 +1043,9 @@ export default function ReportsTab({
 
                 {budget && labourCost > 0 && (
                   <div style={{ marginTop: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280", marginBottom: 3 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>
                       <span>Budget consumed</span>
-                      <span style={{ fontWeight: 500, color: labourCost > budget ? "#dc2626" : "#374151" }}>
+                      <span style={{ fontWeight: 500, color: labourCost > budget ? "#dc2626" : "var(--text-secondary)" }}>
                         {fmt$(labourCost)} / {fmt$(budget)}
                       </span>
                     </div>
@@ -1057,247 +1057,6 @@ export default function ReportsTab({
           </div>
         </>
       )}
-
-    </div>
-  );
-}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: 10,
-          marginBottom: 24,
-        }}
-      >
-        {/* Total rostered hours */}
-        <div style={cardSt({ marginBottom: 0 })}>
-          <SecTitle>Total rostered</SecTitle>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{fmtH(totalRosteredH)}</div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-            {Math.round(totalRosteredH / HPD)} days this month
-          </div>
-        </div>
-
-        {/* Actual hours worked */}
-        <div style={cardSt({ marginBottom: 0 })}>
-          <SecTitle>Actual hours worked</SecTitle>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{fmtH(totalActualH)}</div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-            approved + submitted timesheets
-          </div>
-        </div>
-
-        {/* Variance */}
-        <div style={cardSt({ marginBottom: 0, background: totalVariance < 0 ? "#fef2f2" : totalVariance > 0 ? "#f0fdf4" : "#fff", borderColor: totalVariance < 0 ? "#fecaca" : totalVariance > 0 ? "#bbf7d0" : "#e5e7eb" })}>
-          <SecTitle>Variance</SecTitle>
-          <div style={{
-            fontSize: 28,
-            fontWeight: 700,
-            color: totalVariance < 0 ? "#dc2626" : totalVariance > 0 ? "#059669" : "#111827",
-          }}>
-            {totalVariance >= 0 ? "+" : ""}{fmtH(totalVariance)}
-          </div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>actual vs rostered</div>
-        </div>
-
-        {/* Utilisation */}
-        <div style={cardSt({ marginBottom: 0 })}>
-          <SecTitle>Utilisation</SecTitle>
-          <div style={{ fontSize: 28, fontWeight: 700, color: utilisation >= 100 ? "#dc2626" : utilisation >= 80 ? "#d97706" : "#111827" }}>
-            {utilisation}%
-          </div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>of total capacity</div>
-          <ProgBar pct={utilisation} />
-        </div>
-      </div>
-
-      {/* ── 3. Overtime alerts ── */}
-      <div style={cardSt({ marginBottom: 24 })}>
-        <div
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
-          onClick={() => setOvertimeOpen(o => !o)}
-        >
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <SecTitle>Overtime alerts</SecTitle>
-            {overtimeAlerts.length > 0 && (
-              <Tag bg="#fef3c7" col="#92400e">{overtimeAlerts.length} alert{overtimeAlerts.length !== 1 ? "s" : ""}</Tag>
-            )}
-          </div>
-          <span style={{ fontSize: 13, color: "#6b7280", userSelect: "none" }}>
-            {overtimeOpen ? "▲ Hide" : "▼ Show"}
-          </span>
-        </div>
-
-        {overtimeOpen && (
-          <div style={{ marginTop: 12 }}>
-            {overtimeAlerts.length === 0 ? (
-              <Alert type="ok">No overtime detected — all employees are within the 38h weekly limit.</Alert>
-            ) : (
-              overtimeAlerts.map((a, i) => (
-                <Alert key={i} type="warn">
-                  ⚠ <strong>{a.name}</strong> — {fmtH(a.hours)} in week of {a.weekLabel} (limit: 38h)
-                </Alert>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── 4. Scheduled vs Actual table ── */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
-          Scheduled vs Actual — {MONTHS[rMonth]} {rYear}
-        </div>
-        <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
-          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "#f9fafb" }}>
-                {["Employee", "Rostered Days", "Rostered Hours", "Actual Hours", "Variance", "Utilisation %"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {employees.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: "24px 14px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
-                    No employees to display.
-                  </td>
-                </tr>
-              )}
-              {empRows.map(({ emp, rosteredDays, rosteredH, actualH, variance, util }) => (
-                <tr key={emp.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "10px 14px", fontWeight: 500, color: "#111827", whiteSpace: "nowrap" }}>
-                    <div>{emp.name}</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400 }}>{emp.role}</div>
-                  </td>
-                  <td style={{ padding: "10px 14px", color: "#374151" }}>{rosteredDays}d</td>
-                  <td style={{ padding: "10px 14px", color: "#374151" }}>{fmtH(rosteredH)}</td>
-                  <td style={{ padding: "10px 14px", color: "#374151" }}>{fmtH(actualH)}</td>
-                  <td style={{ padding: "10px 14px", ...varianceCellStyle(variance) }}>
-                    {variance >= 0 ? "+" : ""}{fmtH(variance)}
-                  </td>
-                  <td style={{ padding: "10px 14px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ color: util >= 100 ? "#dc2626" : util >= 80 ? "#d97706" : "#374151", fontWeight: 500 }}>{util}%</span>
-                      <div style={{ flex: 1, minWidth: 60 }}>
-                        <ProgBar pct={util} />
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            {employees.length > 0 && (
-              <tfoot>
-                <tr style={{ background: "#f9fafb", borderTop: "1.5px solid #e5e7eb" }}>
-                  <td style={{ padding: "10px 14px", fontWeight: 700, color: "#111827" }}>Totals</td>
-                  <td style={{ padding: "10px 14px", fontWeight: 600, color: "#111827" }}>{totals.rosteredDays}d</td>
-                  <td style={{ padding: "10px 14px", fontWeight: 600, color: "#111827" }}>{fmtH(totals.rosteredH)}</td>
-                  <td style={{ padding: "10px 14px", fontWeight: 600, color: "#111827" }}>{fmtH(totals.actualH)}</td>
-                  <td style={{ padding: "10px 14px", fontWeight: 600, ...varianceCellStyle(totals.variance) }}>
-                    {totals.variance >= 0 ? "+" : ""}{fmtH(totals.variance)}
-                  </td>
-                  <td style={{ padding: "10px 14px", fontWeight: 600, color: totalUtil >= 100 ? "#dc2626" : totalUtil >= 80 ? "#d97706" : "#374151" }}>
-                    {totalUtil}%
-                  </td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
-
-      {/* ── 5. Project financial summary ── */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
-          Project financial summary — {MONTHS[rMonth]} {rYear}
-        </div>
-        {projects.length === 0 && (
-          <div style={{ padding: "32px 24px", border: "2px dashed #e5e7eb", borderRadius: 12, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
-            No projects to display.
-          </div>
-        )}
-        {projFinancials.map(({ p, manH, labourCost, revenue, margin, budget, allocH, pct }) => (
-          <div key={p.id} style={cardSt({ borderLeft: `4px solid ${p.color}` })}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-              <div>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>{p.name}</span>
-                {p.client && <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>{p.client}</span>}
-              </div>
-              <Tag
-                bg={pct >= 100 ? "#fee2e2" : pct >= 80 ? "#fef9c3" : "#dcfce7"}
-                col={pct >= 100 ? "#dc2626" : pct >= 80 ? "#713f12" : "#166534"}
-              >
-                {pct}% of target
-              </Tag>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 12 }}>
-              <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
-                <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Rostered man-hours</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmtH(manH)}</div>
-                <div style={{ fontSize: 11, color: "#9ca3af" }}>of {fmtH(allocH)} target</div>
-              </div>
-
-              {labourCost > 0 && (
-                <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Labour cost</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmt$(labourCost)}</div>
-                  {budget && <div style={{ fontSize: 11, color: labourCost > budget ? "#dc2626" : "#9ca3af" }}>budget: {fmt$(budget)}</div>}
-                </div>
-              )}
-
-              {revenue !== null && (
-                <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "10px 12px", border: "1px solid #bbf7d0" }}>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Revenue</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmt$(revenue)}</div>
-                  <div style={{ fontSize: 11, color: "#9ca3af" }}>@ ${p.chargeOutRate}/hr</div>
-                </div>
-              )}
-
-              {margin !== null && (
-                <div style={{ background: margin >= 0 ? "#f0fdf4" : "#fef2f2", borderRadius: 8, padding: "10px 12px", border: `1px solid ${margin >= 0 ? "#bbf7d0" : "#fecaca"}` }}>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Margin</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: margin >= 0 ? "#059669" : "#dc2626" }}>{fmt$(margin)}</div>
-                  {revenue && revenue > 0 && (
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>
-                      {Math.round((margin / revenue) * 100)}% of revenue
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {budget && !labourCost && (
-                <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 2 }}>Monthly budget slice</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{fmt$(budget)}</div>
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280", marginBottom: 3 }}>
-              <span>Roster progress</span>
-              <span style={{ fontWeight: 500 }}>{pct}%</span>
-            </div>
-            <ProgBar pct={pct} color={p.color} />
-
-            {budget && labourCost > 0 && (
-              <div style={{ marginTop: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280", marginBottom: 3 }}>
-                  <span>Budget consumed</span>
-                  <span style={{ fontWeight: 500, color: labourCost > budget ? "#dc2626" : "#374151" }}>
-                    {fmt$(labourCost)} / {fmt$(budget)}
-                  </span>
-                </div>
-                <ProgBar pct={Math.round((labourCost / budget) * 100)} />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
 
     </div>
   );

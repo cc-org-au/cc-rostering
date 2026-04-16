@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { useNotifications } from '../lib/useNotifications';
-import { useAuth } from '../lib/useAuth';
+import { useNotifications } from '../../lib/useNotifications';
+import { useAuth } from '../../lib/useAuth';
 import { Overlay, ModalBox, Lbl, FocusInp, Btn, BtnPri, BtnDanger, Tag, Avatar, SecTitle } from './shared';
 
 export function NotificationCenter() {
@@ -158,7 +158,7 @@ export function NotificationCenter() {
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#4f46e5',
+                      color: 'var(--accent)',
                       cursor: 'pointer',
                       fontSize: 12,
                       fontWeight: 500,
@@ -204,7 +204,7 @@ export function NotificationCenter() {
                     fontWeight: 500,
                     cursor: 'pointer',
                     background: (tab === 'All' ? filter === 'all' : filter === tab) ? '#eef2ff' : 'transparent',
-                    color: (tab === 'All' ? filter === 'all' : filter === tab) ? '#4f46e5' : '#6b7280',
+                    color: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent)' : '#6b7280',
                     whiteSpace: 'nowrap'
                   }}
                 >
@@ -287,7 +287,7 @@ export function NotificationCenter() {
                               width: 6,
                               height: 6,
                               borderRadius: '50%',
-                              background: '#4f46e5',
+                              background: 'var(--accent)',
                               flexShrink: 0
                             }} />
                           )}
@@ -344,7 +344,7 @@ export function NotificationCenter() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#4f46e5',
+                    color: 'var(--accent)',
                     cursor: 'pointer',
                     fontSize: 13,
                     fontWeight: 500
@@ -397,7 +397,7 @@ export function NotificationCenter() {
                       fontWeight: 500,
                       cursor: 'pointer',
                       background: (tab === 'All' ? filter === 'all' : filter === tab) ? '#eef2ff' : '#f3f4f6',
-                      color: (tab === 'All' ? filter === 'all' : filter === tab) ? '#4f46e5' : '#6b7280'
+                      color: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent)' : '#6b7280'
                     }}
                   >
                     {tab}

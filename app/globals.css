@@ -1,0 +1,121 @@
+/* Theme tokens — toggled via `html.dark` (see lib/ThemeContext.jsx + layout script) */
+:root {
+  --bg-page: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-muted: #f3f4f6;
+  --bg-surface: #fafafa;
+  --bg-elevated: #ffffff;
+  --bg-input-disabled: #f9fafb;
+  --border: #e5e7eb;
+  --border-input: #d1d5db;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --accent-muted: #a5b4fc;
+  --on-accent: #ffffff;
+  --overlay-scrim: rgba(0, 0, 0, 0.25);
+  --overlay-confirm: rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 4px 32px rgba(0, 0, 0, 0.12);
+  --shadow-modal-strong: 0 4px 32px rgba(0, 0, 0, 0.15);
+  --shadow-toast: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 4px 32px rgba(0, 0, 0, 0.08);
+  --prog-track: #f3f4f6;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-text: #374151;
+  --danger-bg: #fff5f5;
+  --danger-text: #dc2626;
+  --danger-border: #fecaca;
+  --success-bg: #f0fdf4;
+  --success-text: #166534;
+  --success-border: #86efac;
+  --focus-ring: #4f46e5;
+  --avatar-fg: #4f46e5;
+  --avatar-bg: #eef2ff;
+  --str-active-bg: #ecfdf5;
+  --str-active-text: #059669;
+  --str-active-border: #6ee7b7;
+  --info-bg: #eff6ff;
+  --info-border: #bfdbfe;
+  --info-text: #1e40af;
+  --info-text-strong: #1d4ed8;
+  --note-muted: #9ca3af;
+  --link: #4f46e5;
+  --auth-card-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
+  --toast-bg: #1f2937;
+  --toast-fg: #ffffff;
+}
+
+html.dark {
+  --bg-page: #0f172a;
+  --bg-card: #1e293b;
+  --bg-muted: #334155;
+  --bg-surface: #1e293b;
+  --bg-elevated: #334155;
+  --bg-input-disabled: #0f172a;
+  --border: #334155;
+  --border-input: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-soft: rgba(129, 140, 248, 0.18);
+  --accent-muted: #6366f1;
+  --on-accent: #0f172a;
+  --overlay-scrim: rgba(0, 0, 0, 0.55);
+  --overlay-confirm: rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 4px 32px rgba(0, 0, 0, 0.45);
+  --shadow-modal-strong: 0 4px 32px rgba(0, 0, 0, 0.55);
+  --shadow-toast: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 32px rgba(0, 0, 0, 0.35);
+  --prog-track: #334155;
+  --btn-secondary-bg: #334155;
+  --btn-secondary-text: #e2e8f0;
+  --danger-bg: rgba(220, 38, 38, 0.18);
+  --danger-text: #fca5a5;
+  --danger-border: rgba(248, 113, 113, 0.45);
+  --success-bg: rgba(22, 101, 52, 0.25);
+  --success-text: #86efac;
+  --success-border: rgba(74, 222, 128, 0.4);
+  --focus-ring: #818cf8;
+  --avatar-fg: #e0e7ff;
+  --avatar-bg: rgba(129, 140, 248, 0.28);
+  --str-active-bg: rgba(16, 185, 129, 0.2);
+  --str-active-text: #6ee7b7;
+  --str-active-border: rgba(52, 211, 153, 0.5);
+  --info-bg: rgba(59, 130, 246, 0.15);
+  --info-border: rgba(96, 165, 250, 0.4);
+  --info-text: #93c5fd;
+  --info-text-strong: #bfdbfe;
+  --note-muted: #64748b;
+  --link: #a5b4fc;
+  --auth-card-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
+  --toast-bg: #020617;
+  --toast-fg: #f8fafc;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+body.app-body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
