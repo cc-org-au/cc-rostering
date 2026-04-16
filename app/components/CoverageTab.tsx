@@ -84,16 +84,16 @@ export function CoverageTab() {
     over: '#ef4444',
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading coverage data...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading coverage data...</div>;
 
   return (
     <div style={{ padding: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
         Real-Time Shift Coverage
       </h3>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+        <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
           Select Date
         </label>
         <input
@@ -113,7 +113,7 @@ export function CoverageTab() {
       {/* Coverage Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
         {[
-          { label: 'Total Shifts', value: stats.total, color: '#111827' },
+          { label: 'Total Shifts', value: stats.total, color: 'var(--text-primary)' },
           { label: 'Full Coverage', value: stats.full, color: '#10b981' },
           { label: 'Partial Coverage', value: stats.partial, color: '#f59e0b' },
           { label: 'Open Shifts', value: stats.open, color: '#dc2626' },
@@ -122,28 +122,28 @@ export function CoverageTab() {
           <div
             key={stat.label}
             style={{
-              background: '#f9fafb',
+              background: 'var(--bg-muted)',
               border: '1.5px solid #e5e7eb',
               borderRadius: 10,
               padding: 12,
             }}
           >
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>{stat.label}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{stat.label}</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.value}</div>
           </div>
         ))}
       </div>
 
       {/* Coverage Progress */}
-      <div style={{ background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: 14, marginBottom: 20 }}>
+      <div style={{ background: 'var(--bg-muted)', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: 14, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Overall Coverage</span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{fillPercentage}%</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Overall Coverage</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fillPercentage}%</span>
         </div>
         <div
           style={{
             height: 8,
-            background: '#e5e7eb',
+            background: 'var(--border)',
             borderRadius: 99,
             overflow: 'hidden',
           }}
@@ -163,7 +163,7 @@ export function CoverageTab() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Open & Partial */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 12 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>
             Gaps to Fill ({stats.open + stats.partial})
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -179,14 +179,14 @@ export function CoverageTab() {
                   <div
                     key={shift.id}
                     style={{
-                      background: '#fff',
+                      background: 'var(--bg-card)',
                       border: `2px solid ${statusColors[st.status]}`,
                       borderRadius: 8,
                       padding: 12,
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                         {projects[shift.project_id]?.name || 'Unknown Project'}
                       </span>
                       <span
@@ -202,17 +202,17 @@ export function CoverageTab() {
                         {st.status === 'open' ? 'OPEN' : 'PARTIAL'} ({needed} needed)
                       </span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
                       {shift.date} · {shift.start_time}-{shift.end_time}
                     </div>
-                    <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-faint)' }}>
                       {st.count} / {shift.required_count} assigned
                     </div>
                   </div>
                 );
               })}
             {stats.open + stats.partial === 0 && (
-              <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '20px 0' }}>
                 No coverage gaps!
               </div>
             )}
@@ -221,7 +221,7 @@ export function CoverageTab() {
 
         {/* Full Coverage */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 12 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>
             Fully Covered ({stats.full})
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -263,7 +263,7 @@ export function CoverageTab() {
                 </div>
               ))}
             {stats.full === 0 && (
-              <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '20px 0' }}>
                 No fully covered shifts
               </div>
             )}

@@ -72,12 +72,12 @@ export function RulesConfig() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading rules...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading rules...</div>;
 
   return (
     <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', margin: 0 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
           Shift Rules & Compliance
         </h3>
         <button
@@ -94,8 +94,8 @@ export function RulesConfig() {
           }
           style={{
             padding: '8px 16px',
-            background: '#4f46e5',
-            color: '#fff',
+            background: 'var(--accent)',
+            color: 'var(--on-accent)',
             border: 'none',
             borderRadius: 8,
             fontSize: 13,
@@ -112,8 +112,8 @@ export function RulesConfig() {
           <div
             key={rule.id}
             style={{
-              background: '#fff',
-              border: `2px solid ${rule.enabled ? '#e5e7eb' : '#d1d5db'}`,
+              background: 'var(--bg-card)',
+              border: `2px solid ${rule.enabled ? 'var(--border)' : 'var(--border-input)'}`,
               borderRadius: 10,
               padding: 14,
               opacity: rule.enabled ? 1 : 0.6,
@@ -127,14 +127,14 @@ export function RulesConfig() {
                 style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer' }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 2 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
                   {rule.name || 'Unnamed Rule'}
                 </div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
                   {rule.rule_type}
                   {rule.threshold > 0 && ` · Threshold: ${rule.threshold}`}
                 </div>
-                <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-faint)' }}>
                   {rule.enabled_projects.length > 0
                     ? `Applied to: ${rule.enabled_projects.length} project(s)`
                     : 'All projects'}
@@ -193,7 +193,7 @@ export function RulesConfig() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.25)',
+            background: 'var(--overlay-scrim)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -204,7 +204,7 @@ export function RulesConfig() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#fff',
+              background: 'var(--bg-card)',
               borderRadius: 12,
               padding: 24,
               maxWidth: 500,
@@ -212,13 +212,13 @@ export function RulesConfig() {
               boxShadow: '0 4px 32px rgba(0,0,0,0.12)',
             }}
           >
-            <h4 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16, margin: 0 }}>
+            <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, margin: 0 }}>
               {editingRule.id.startsWith('rule-') ? 'New Rule' : 'Edit Rule'}
             </h4>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
                   Rule Name
                 </label>
                 <input
@@ -240,7 +240,7 @@ export function RulesConfig() {
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
                   Rule Type
                 </label>
                 <select
@@ -266,7 +266,7 @@ export function RulesConfig() {
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
                   Threshold / Limit
                 </label>
                 <input
@@ -293,7 +293,7 @@ export function RulesConfig() {
                 onClick={() => setEditingRule(null)}
                 style={{
                   padding: '8px 16px',
-                  background: '#fff',
+                  background: 'var(--bg-card)',
                   border: '1.5px solid #d1d5db',
                   borderRadius: 8,
                   fontSize: 13,
@@ -306,8 +306,8 @@ export function RulesConfig() {
                 onClick={() => handleSaveRule(editingRule)}
                 style={{
                   padding: '8px 16px',
-                  background: '#4f46e5',
-                  color: '#fff',
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
                   border: 'none',
                   borderRadius: 8,
                   fontSize: 13,

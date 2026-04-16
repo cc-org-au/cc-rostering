@@ -90,8 +90,8 @@ function DayEditorModal({ day, rYear, rMonth, employees, projects, assigns, getA
       <ModalBox maxWidth={540}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <div>
-            <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{dl} {day} {MONTHS[rMonth]} {rYear}</div>
-            <div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{assigned.length} staff on site</div>
+            <div style={{fontSize:18,fontWeight:700,color:"var(--text-primary)"}}>{dl} {day} {MONTHS[rMonth]} {rYear}</div>
+            <div style={{fontSize:13,color:"var(--text-muted)",marginTop:2}}>{assigned.length} staff on site</div>
           </div>
           <Btn onClick={onClose}>Close</Btn>
         </div>
@@ -101,9 +101,9 @@ function DayEditorModal({ day, rYear, rMonth, employees, projects, assigns, getA
               const count = assigned.filter(e => getA(rYear, rMonth, day, e.id) === p.id).length;
               const fixed = p.staffMode === "fixed" && p.fixedStaff ? parseInt(p.fixedStaff) : null;
               const ok = fixed === null || count === fixed;
-              const bg = fixed === null ? "#f3f4f6" : ok ? "#dcfce7" : "#fee2e2";
-              const col = fixed === null ? "#6b7280" : ok ? "#166534" : "#dc2626";
-              const border = ok ? (fixed === null ? "#e5e7eb" : "#86efac") : "#fca5a5";
+              const bg = fixed === null ? "var(--bg-muted)" : ok ? "#dcfce7" : "#fee2e2";
+              const col = fixed === null ? "var(--text-muted)" : ok ? "#166534" : "#dc2626";
+              const border = ok ? (fixed === null ? "var(--border)" : "#86efac") : "#fca5a5";
               return (
                 <div key={p.id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:99,background:bg,border:`1.5px solid ${border}`}}>
                   <span style={{width:7,height:7,borderRadius:"50%",background:p.color,flexShrink:0}}/>
@@ -117,22 +117,22 @@ function DayEditorModal({ day, rYear, rMonth, employees, projects, assigns, getA
           </div>
         )}
         <SecTitle>On site ({assigned.length})</SecTitle>
-        {assigned.length === 0 && <p style={{fontSize:13,color:"#9ca3af",marginBottom:12}}>No one assigned — add staff below.</p>}
+        {assigned.length === 0 && <p style={{fontSize:13,color:"var(--text-faint)",marginBottom:12}}>No one assigned — add staff below.</p>}
         {assigned.map(e => {
           const pid = getA(rYear, rMonth, day, e.id);
           return (
             <div key={e.id} draggable
               onDragStart={ev => ev.dataTransfer.setData("text/plain", JSON.stringify({eId:e.id, fromDay:day}))}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid #e5e7eb",borderRadius:10,background:"#fafafa",marginBottom:6,cursor:"grab"}}>
+              style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid #e5e7eb",borderRadius:10,background:"var(--bg-surface)",marginBottom:6,cursor:"grab"}}>
               <Avatar name={e.name} color={projColor(projects, pid)}/>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:500,color:"#111827"}}>{e.name}</div>
-                <div style={{fontSize:12,color:"#6b7280"}}>{e.role}</div>
+                <div style={{fontSize:14,fontWeight:500,color:"var(--text-primary)"}}>{e.name}</div>
+                <div style={{fontSize:12,color:"var(--text-muted)"}}>{e.role}</div>
               </div>
               <select value={pid} onChange={ev => setA(rYear, rMonth, day, e.id, ev.target.value)} style={selSt({fontSize:13,padding:"6px 10px"})}>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <button onClick={() => setA(rYear, rMonth, day, e.id, null)} style={{border:"none",background:"none",cursor:"pointer",color:"#9ca3af",fontSize:20,lineHeight:1,padding:"0 4px"}}>✕</button>
+              <button onClick={() => setA(rYear, rMonth, day, e.id, null)} style={{border:"none",background:"none",cursor:"pointer",color:"var(--text-faint)",fontSize:20,lineHeight:1,padding:"0 4px"}}>✕</button>
             </div>
           );
         })}
@@ -140,11 +140,11 @@ function DayEditorModal({ day, rYear, rMonth, employees, projects, assigns, getA
           <div style={{marginTop:16}}>
             <SecTitle>Available to add ({available.length})</SecTitle>
             {available.map(e => (
-              <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid #e5e7eb",borderRadius:10,background:"#fff",marginBottom:6}}>
+              <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1.5px solid #e5e7eb",borderRadius:10,background:"var(--bg-card)",marginBottom:6}}>
                 <Avatar name={e.name}/>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:14,fontWeight:500,color:"#111827"}}>{e.name}</div>
-                  <div style={{fontSize:12,color:"#6b7280"}}>{e.role}{e.strengths?.length ? ` · ${e.strengths.slice(0,2).join(", ")}${e.strengths.length>2?` +${e.strengths.length-2}`:""}` : ""}</div>
+                  <div style={{fontSize:14,fontWeight:500,color:"var(--text-primary)"}}>{e.name}</div>
+                  <div style={{fontSize:12,color:"var(--text-muted)"}}>{e.role}{e.strengths?.length ? ` · ${e.strengths.slice(0,2).join(", ")}${e.strengths.length>2?` +${e.strengths.length-2}`:""}` : ""}</div>
                 </div>
                 <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end"}}>
                   {projects.map(p => {
@@ -174,7 +174,7 @@ function DayEditorModal({ day, rYear, rMonth, employees, projects, assigns, getA
           <div style={{marginTop:16}}>
             <SecTitle>Unavailable today ({unavail.length})</SecTitle>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {unavail.map(e => <span key={e.id} style={{fontSize:12,padding:"3px 10px",borderRadius:99,background:"#f3f4f6",color:"#9ca3af",border:"1px solid #e5e7eb"}}>{e.name}</span>)}
+              {unavail.map(e => <span key={e.id} style={{fontSize:12,padding:"3px 10px",borderRadius:99,background:"var(--bg-muted)",color:"var(--text-faint)",border:"1px solid #e5e7eb"}}>{e.name}</span>)}
             </div>
           </div>
         )}
@@ -191,14 +191,14 @@ function CoverageView({ projects, employees, assigns, rYear, rMonth, calDays, on
       <table style={{borderCollapse:"collapse",fontSize:12,width:"100%"}}>
         <thead>
           <tr>
-            <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",minWidth:160,position:"sticky",left:0,background:"#fff",zIndex:1}}>Project</th>
+            <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"var(--text-muted)",borderBottom:"1.5px solid var(--border)",minWidth:160,position:"sticky",left:0,background:"var(--bg-card)",zIndex:1}}>Project</th>
             {weekdays.map(d => (
-              <th key={d} style={{padding:"3px 2px",textAlign:"center",color:"#6b7280",fontWeight:500,borderBottom:"1.5px solid #e5e7eb",minWidth:36}}>
+              <th key={d} style={{padding:"3px 2px",textAlign:"center",color:"var(--text-muted)",fontWeight:500,borderBottom:"1.5px solid var(--border)",minWidth:36}}>
                 <div style={{fontSize:11}}>{d}</div>
                 <div style={{fontSize:9,marginTop:1}}>{dlabel(rYear,rMonth,d).slice(0,1)}</div>
               </th>
             ))}
-            <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",minWidth:90}}>Coverage</th>
+            <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"var(--text-muted)",borderBottom:"1.5px solid var(--border)",minWidth:90}}>Coverage</th>
           </tr>
         </thead>
         <tbody>
@@ -208,12 +208,12 @@ function CoverageView({ projects, employees, assigns, rYear, rMonth, calDays, on
             const filledDays = weekdays.filter(d => employees.some(e => assigns[`${rYear}-${rMonth}-${d}-${e.id}`] === p.id)).length;
             return (
               <tr key={p.id} style={{borderBottom:"1px solid #f3f4f6"}}>
-                <td style={{padding:"8px 12px",fontWeight:500,color:"#111827",position:"sticky",left:0,background:"#fff",zIndex:1}}>
+                <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-primary)",position:"sticky",left:0,background:"var(--bg-card)",zIndex:1}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{width:10,height:10,borderRadius:"50%",background:p.color,flexShrink:0}}/>
                     <span style={{fontSize:13}}>{p.name}</span>
                   </div>
-                  {fixed && <div style={{fontSize:11,color:"#6b7280",marginLeft:18}}>Needs {fixed}/day</div>}
+                  {fixed && <div style={{fontSize:11,color:"var(--text-muted)",marginLeft:18}}>Needs {fixed}/day</div>}
                 </td>
                 {weekdays.map(d => {
                   const count = employees.filter(e => assigns[`${rYear}-${rMonth}-${d}-${e.id}`] === p.id).length;
@@ -239,8 +239,8 @@ function CoverageView({ projects, employees, assigns, rYear, rMonth, calDays, on
             );
           })}
           {/* Unassigned row */}
-          <tr style={{borderBottom:"1px solid #f3f4f6",background:"#fafafa"}}>
-            <td style={{padding:"8px 12px",fontWeight:500,color:"#6b7280",fontSize:13,position:"sticky",left:0,background:"#fafafa",zIndex:1}}>Unassigned</td>
+          <tr style={{borderBottom:"1px solid #f3f4f6",background:"var(--bg-surface)"}}>
+            <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-muted)",fontSize:13,position:"sticky",left:0,background:"var(--bg-surface)",zIndex:1}}>Unassigned</td>
             {weekdays.map(d => {
               const unassigned = employees.filter(e => {
                 const dl = dlabel(rYear, rMonth, d);
@@ -352,7 +352,7 @@ export default function RosterTab({
         <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden"}}>
           {[["calendar","Calendar"],["employees","By employee"],["coverage","Coverage"]].map(([v,label])=>(
             <button key={v} type="button" onClick={()=>setRView(v)}
-              style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"#4f46e5":"#fff",color:rosterView===v?"#fff":"#374151",whiteSpace:"nowrap"}}>
+              style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"var(--accent)":"#fff",color:rosterView===v?"#fff":"var(--text-secondary)",whiteSpace:"nowrap"}}>
               {label}
             </button>
           ))}
@@ -401,7 +401,7 @@ export default function RosterTab({
       )}
 
       {(projects.length === 0 || employees.length === 0) && (
-        <div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"#9ca3af",fontSize:14}}>
+        <div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"var(--text-faint)",fontSize:14}}>
           Add projects and employees first to start building the roster.
         </div>
       )}
@@ -410,7 +410,7 @@ export default function RosterTab({
       {projects.length > 0 && employees.length > 0 && rosterView === "calendar" && (
         <div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
-            {DAYS_SHORT.map(d=><div key={d} style={{fontSize:12,fontWeight:600,textAlign:"center",color:"#6b7280",padding:"4px 0"}}>{d}</div>)}
+            {DAYS_SHORT.map(d=><div key={d} style={{fontSize:12,fontWeight:600,textAlign:"center",color:"var(--text-muted)",padding:"4px 0"}}>{d}</div>)}
           </div>
           {weeks.map((week,wi) => (
             <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
@@ -429,25 +429,25 @@ export default function RosterTab({
                     onDragLeave={() => setDragOverDay(null)}
                     onDrop={ev => handleDrop(day, ev)}
                     onMouseEnter={e=>{if(!wknd){e.currentTarget.style.borderColor="#a5b4fc";e.currentTarget.style.boxShadow="0 0 0 3px #eef2ff";}}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor=isDragOver?"#6366f1":"#e5e7eb";e.currentTarget.style.boxShadow="none";}}
-                    style={{border:`1.5px solid ${isDragOver?"#6366f1":"#e5e7eb"}`,borderRadius:10,padding:"6px 7px",minHeight:72,background:wknd?"#f9fafb":isDragOver?"#eef2ff":"#fff",cursor:wknd?"default":"pointer",transition:"border-color 0.12s,box-shadow 0.12s,background 0.12s"}}>
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=isDragOver?"#6366f1":"var(--border)";e.currentTarget.style.boxShadow="none";}}
+                    style={{border:`1.5px solid ${isDragOver?"#6366f1":"var(--border)"}`,borderRadius:10,padding:"6px 7px",minHeight:72,background:wknd?"var(--bg-muted)":isDragOver?"#eef2ff":"#fff",cursor:wknd?"default":"pointer",transition:"border-color 0.12s,box-shadow 0.12s,background 0.12s"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                      <span style={{fontSize:12,fontWeight:600,color:wknd?"#9ca3af":"#374151"}}>{day}</span>
+                      <span style={{fontSize:12,fontWeight:600,color:wknd?"var(--text-faint)":"var(--text-secondary)"}}>{day}</span>
                       {hasOpenShift && <span title={`${openShiftDays[day]} open shift(s)`} style={{fontSize:9,padding:"1px 5px",borderRadius:99,background:"#eff6ff",color:"#1d4ed8",fontWeight:700}}>+{openShiftDays[day]}</span>}
                     </div>
                     {!wknd && Object.entries(byProj).map(([pid,count]) => (
                       <div key={pid} style={{display:"flex",alignItems:"center",gap:3,marginBottom:2}}>
                         <span style={{width:7,height:7,borderRadius:"50%",background:projColor(projects,pid),flexShrink:0}}/>
-                        <span style={{fontSize:10,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{count} · {projNameOf(projects,pid).slice(0,9)}{projNameOf(projects,pid).length>9?"…":""}</span>
+                        <span style={{fontSize:10,color:"var(--text-secondary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{count} · {projNameOf(projects,pid).slice(0,9)}{projNameOf(projects,pid).length>9?"…":""}</span>
                       </div>
                     ))}
-                    {!wknd && Object.keys(byProj).length===0 && <span style={{fontSize:10,color:"#d1d5db"}}>Tap to add</span>}
+                    {!wknd && Object.keys(byProj).length===0 && <span style={{fontSize:10,color:"var(--border-input)"}}>Tap to add</span>}
                   </div>
                 );
               })}
             </div>
           ))}
-          <div style={{fontSize:12,color:"#9ca3af",marginTop:8}}>💡 Drag an assigned employee to another day to move them. Blue badge = open shifts available.</div>
+          <div style={{fontSize:12,color:"var(--text-faint)",marginTop:8}}>💡 Drag an assigned employee to another day to move them. Blue badge = open shifts available.</div>
         </div>
       )}
 
@@ -457,17 +457,17 @@ export default function RosterTab({
           <table style={{borderCollapse:"collapse",fontSize:12,width:"100%"}}>
             <thead>
               <tr>
-                <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",minWidth:140,position:"sticky",left:0,background:"#fff",zIndex:1}}>Employee</th>
+                <th style={{textAlign:"left",padding:"6px 12px",fontWeight:600,color:"var(--text-muted)",borderBottom:"1.5px solid var(--border)",minWidth:140,position:"sticky",left:0,background:"var(--bg-card)",zIndex:1}}>Employee</th>
                 {calDays.map(d => {
                   const wknd = isWknd(rYear, rMonth, d);
                   return (
-                    <th key={d} style={{padding:"3px 1px",textAlign:"center",color:wknd?"#d1d5db":"#6b7280",fontWeight:500,borderBottom:"1.5px solid #e5e7eb",minWidth:28}}>
+                    <th key={d} style={{padding:"3px 1px",textAlign:"center",color:wknd?"var(--border-input)":"var(--text-muted)",fontWeight:500,borderBottom:"1.5px solid var(--border)",minWidth:28}}>
                       <div style={{fontSize:11}}>{d}</div>
                       <div style={{fontSize:9,marginTop:1}}>{dlabel(rYear,rMonth,d).slice(0,1)}</div>
                     </th>
                   );
                 })}
-                <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6b7280",borderBottom:"1.5px solid #e5e7eb",whiteSpace:"nowrap",minWidth:80}}>Scheduled</th>
+                <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"var(--text-muted)",borderBottom:"1.5px solid var(--border)",whiteSpace:"nowrap",minWidth:80}}>Scheduled</th>
               </tr>
             </thead>
             <tbody>
@@ -477,12 +477,12 @@ export default function RosterTab({
                 const hasViol = violations.some(v => v.emp.id === e.id);
                 return (
                   <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6",background:hasViol?"#fffbeb":"#fff"}}>
-                    <td style={{padding:"8px 12px",fontWeight:500,color:"#111827",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:hasViol?"#fffbeb":"#fff",zIndex:1}}>
+                    <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-primary)",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:hasViol?"#fffbeb":"#fff",zIndex:1}}>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                         {hasViol && <span title="Compliance issue">⚠</span>}
                         <div>
                           <div>{e.name}</div>
-                          <div style={{fontSize:11,color:"#9ca3af",fontWeight:400}}>{e.role}</div>
+                          <div style={{fontSize:11,color:"var(--text-faint)",fontWeight:400}}>{e.role}</div>
                         </div>
                       </div>
                     </td>
@@ -501,16 +501,16 @@ export default function RosterTab({
                           onDrop={ev => handleDrop(d, ev)}
                           onClick={() => { if (!wknd) setDayEd(d); }}
                           title={pid ? `${e.name} → ${projNameOf(projects,pid)}` : isPTO ? "Approved leave" : undefined}
-                          style={{padding:"3px 1px",textAlign:"center",background:wknd?"#f9fafb":isPTO?"#ede9fe":pid?projColor(projects,pid)+"28":"#fff",cursor:wknd?"default":"pointer",borderLeft:"1px solid #f3f4f6"}}>
+                          style={{padding:"3px 1px",textAlign:"center",background:wknd?"var(--bg-muted)":isPTO?"#ede9fe":pid?projColor(projects,pid)+"28":"#fff",cursor:wknd?"default":"pointer",borderLeft:"1px solid #f3f4f6"}}>
                           {pid && <span style={{display:"block",width:10,height:10,borderRadius:"50%",background:projColor(projects,pid),margin:"0 auto"}}/>}
                           {isPTO && !pid && <span style={{color:"#7c3aed",fontSize:9}}>PTO</span>}
-                          {!pid && !wknd && !avail && !isPTO && <span style={{color:"#e5e7eb",fontSize:9}}>–</span>}
+                          {!pid && !wknd && !avail && !isPTO && <span style={{color:"var(--border)",fontSize:9}}>–</span>}
                         </td>
                       );
                     })}
                     <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>
-                      <span style={{fontSize:12,fontWeight:600,color:pct>=100?"#dc2626":pct>=80?"#d97706":"#374151"}}>{Math.round(sch/HPD)}d</span>
-                      <span style={{fontSize:11,color:"#9ca3af"}}> / {Math.round(e.maxHoursPerMonth/HPD)}d</span>
+                      <span style={{fontSize:12,fontWeight:600,color:pct>=100?"#dc2626":pct>=80?"#d97706":"var(--text-secondary)"}}>{Math.round(sch/HPD)}d</span>
+                      <span style={{fontSize:11,color:"var(--text-faint)"}}> / {Math.round(e.maxHoursPerMonth/HPD)}d</span>
                     </td>
                   </tr>
                 );

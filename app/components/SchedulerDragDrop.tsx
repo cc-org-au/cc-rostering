@@ -115,7 +115,7 @@ export function SchedulerDragDrop() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading scheduler...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading scheduler...</div>;
 
   const projectShifts = selectedProject
     ? shifts.filter((s) => s.project_id === selectedProject && s.date === selectedDate)
@@ -135,13 +135,13 @@ export function SchedulerDragDrop() {
 
   return (
     <div style={{ padding: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
         Drag & Drop Scheduler
       </h3>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
             Date
           </label>
           <input
@@ -159,7 +159,7 @@ export function SchedulerDragDrop() {
         </div>
 
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
             Project
           </label>
           <select
@@ -188,7 +188,7 @@ export function SchedulerDragDrop() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {/* Open Shifts */}
           <div>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 12 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>
               Available Shifts ({projectShifts.length})
             </h4>
             <Droppable droppableId="unassigned">
@@ -197,8 +197,8 @@ export function SchedulerDragDrop() {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   style={{
-                    background: snapshot.isDraggingOver ? '#f0fdf4' : '#f9fafb',
-                    border: `2px dashed ${snapshot.isDraggingOver ? '#10b981' : '#e5e7eb'}`,
+                    background: snapshot.isDraggingOver ? '#f0fdf4' : 'var(--bg-muted)',
+                    border: `2px dashed ${snapshot.isDraggingOver ? '#10b981' : 'var(--border)'}`,
                     borderRadius: 12,
                     padding: 12,
                     minHeight: 400,
@@ -228,10 +228,10 @@ export function SchedulerDragDrop() {
 
           {/* Assigned Shifts */}
           <div>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 12 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 12 }}>
               Assigned Staff ({Object.keys(employees).length})
             </h4>
-            <div style={{ background: '#f9fafb', border: '2px dashed #e5e7eb', borderRadius: 12, padding: 12, minHeight: 400 }}>
+            <div style={{ background: 'var(--bg-muted)', border: '2px dashed #e5e7eb', borderRadius: 12, padding: 12, minHeight: 400 }}>
               {Object.values(employees).map((emp) => (
                 <Droppable key={emp.id} droppableId={emp.id}>
                   {(provided, snapshot) => (
@@ -239,14 +239,14 @@ export function SchedulerDragDrop() {
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       style={{
-                        background: snapshot.isDraggingOver ? '#eff6ff' : '#fff',
-                        border: `1px solid ${snapshot.isDraggingOver ? '#93c5fd' : '#e5e7eb'}`,
+                        background: snapshot.isDraggingOver ? '#eff6ff' : 'var(--bg-card)',
+                        border: `1px solid ${snapshot.isDraggingOver ? '#93c5fd' : 'var(--border)'}`,
                         borderRadius: 8,
                         padding: 10,
                         marginBottom: 8,
                       }}
                     >
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#111827', marginBottom: 6 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
                         {emp.name}
                       </div>
                       {assignments

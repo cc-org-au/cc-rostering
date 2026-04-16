@@ -140,11 +140,11 @@ export function TimesheetEntry() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading time & attendance...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading time & attendance...</div>;
 
   return (
     <div style={{ padding: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
         Time & Attendance
       </h3>
 
@@ -156,8 +156,8 @@ export function TimesheetEntry() {
             onClick={() => setActiveTab(tab as 'timesheets' | 'pto')}
             style={{
               padding: '8px 12px',
-              background: activeTab === tab ? '#4f46e5' : 'transparent',
-              color: activeTab === tab ? '#fff' : '#6b7280',
+              background: activeTab === tab ? 'var(--accent)' : 'transparent',
+              color: activeTab === tab ? 'var(--on-accent)' : 'var(--text-muted)',
               border: 'none',
               borderRadius: 6,
               fontSize: 13,
@@ -204,7 +204,7 @@ export function TimesheetEntry() {
                 style={{
                   padding: '8px 16px',
                   background: clockInEmp ? '#1d4ed8' : '#bfdbfe',
-                  color: '#fff',
+                  color: clockInEmp ? '#fff' : 'var(--text-secondary)',
                   border: 'none',
                   borderRadius: 6,
                   fontSize: 13,
@@ -223,7 +223,7 @@ export function TimesheetEntry() {
               <div
                 key={ts.id}
                 style={{
-                  background: '#fff',
+                  background: 'var(--bg-card)',
                   border: '1.5px solid #e5e7eb',
                   borderRadius: 10,
                   padding: 12,
@@ -233,10 +233,10 @@ export function TimesheetEntry() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                     {employees[ts.employee_id]?.name || 'Unknown'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
                     {ts.clock_in && new Date(ts.clock_in).toLocaleTimeString()}
                     {ts.clock_out && ` - ${new Date(ts.clock_out).toLocaleTimeString()}`}
                   </div>
@@ -269,8 +269,8 @@ export function TimesheetEntry() {
                       onClick={() => handleSubmitTimesheet(ts.id)}
                       style={{
                         padding: '6px 12px',
-                        background: '#4f46e5',
-                        color: '#fff',
+                        background: 'var(--accent)',
+                        color: 'var(--on-accent)',
                         border: 'none',
                         borderRadius: 6,
                         fontSize: 12,
@@ -297,7 +297,7 @@ export function TimesheetEntry() {
                           ? '#065f46'
                           : ts.status === 'submitted'
                             ? '#92400e'
-                            : '#6b7280',
+                            : 'var(--text-muted)',
                       borderRadius: 4,
                     }}
                   >
@@ -318,7 +318,7 @@ export function TimesheetEntry() {
               <div
                 key={pto.id}
                 style={{
-                  background: '#fff',
+                  background: 'var(--bg-card)',
                   border: '1.5px solid #e5e7eb',
                   borderRadius: 10,
                   padding: 12,
@@ -326,10 +326,10 @@ export function TimesheetEntry() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                       {employees[pto.employee_id]?.name || 'Unknown'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
                       {pto.date_from} to {pto.date_to}
                     </div>
                   </div>
@@ -347,7 +347,7 @@ export function TimesheetEntry() {
                   </span>
                 </div>
                 {pto.reason && (
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     Reason: {pto.reason}
                   </div>
                 )}

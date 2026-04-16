@@ -102,11 +102,11 @@ export function PayrollManagement() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading payroll...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading payroll...</div>;
 
   return (
     <div style={{ padding: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
         Payroll Management
       </h3>
 
@@ -178,7 +178,7 @@ export function PayrollManagement() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16 }}>
         {/* Payroll Runs List */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
             Payroll Runs
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -189,18 +189,18 @@ export function PayrollManagement() {
                 style={{
                   textAlign: 'left',
                   padding: '10px 12px',
-                  background: selectedRun?.id === run.id ? '#eff6ff' : '#f9fafb',
-                  border: `1.5px solid ${selectedRun?.id === run.id ? '#93c5fd' : '#e5e7eb'}`,
+                  background: selectedRun?.id === run.id ? '#eff6ff' : 'var(--bg-muted)',
+                  border: `1.5px solid ${selectedRun?.id === run.id ? '#93c5fd' : 'var(--border)'}`,
                   borderRadius: 8,
                   fontSize: 12,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
               >
-                <div style={{ fontWeight: 500, color: '#111827' }}>
+                <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
                   {run.period_start} to {run.period_end}
                 </div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                   ${run.total_cost.toFixed(2)} · {run.status}
                 </div>
               </button>
@@ -212,7 +212,7 @@ export function PayrollManagement() {
         {selectedRun && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h4 style={{ fontSize: 13, fontWeight: 600, color: '#374151', margin: 0 }}>
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', margin: 0 }}>
                 Line Items
               </h4>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -253,19 +253,19 @@ export function PayrollManagement() {
               <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1.5px solid #e5e7eb' }}>
-                    <th style={{ textAlign: 'left', padding: '8px 4px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 4px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Employee
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Hours
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       OT Hours
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Gross
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Net
                     </th>
                   </tr>
@@ -273,16 +273,16 @@ export function PayrollManagement() {
                 <tbody>
                   {lineItems.map((item) => (
                     <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '6px 4px', color: '#111827' }}>
+                      <td style={{ padding: '6px 4px', color: 'var(--text-primary)' }}>
                         {employees[item.employee_id]?.name || item.employee_id}
                       </td>
-                      <td style={{ textAlign: 'right', padding: '6px 4px', color: '#374151' }}>
+                      <td style={{ textAlign: 'right', padding: '6px 4px', color: 'var(--text-secondary)' }}>
                         {item.shift_hours.toFixed(1)}
                       </td>
-                      <td style={{ textAlign: 'right', padding: '6px 4px', color: '#374151' }}>
+                      <td style={{ textAlign: 'right', padding: '6px 4px', color: 'var(--text-secondary)' }}>
                         {item.overtime_hours.toFixed(1)}
                       </td>
-                      <td style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 500, color: '#111827' }}>
+                      <td style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 500, color: 'var(--text-primary)' }}>
                         ${item.gross_amount.toFixed(2)}
                       </td>
                       <td style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 500, color: '#059669' }}>
@@ -294,10 +294,10 @@ export function PayrollManagement() {
               </table>
             </div>
 
-            <div style={{ marginTop: 12, padding: '10px 12px', background: '#f9fafb', borderRadius: 8, borderBottom: '1.5px solid #e5e7eb' }}>
+            <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--bg-muted)', borderRadius: 8, borderBottom: '1.5px solid #e5e7eb' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600 }}>
                 <span>Total Cost:</span>
-                <span style={{ color: '#111827' }}>${selectedRun.total_cost.toFixed(2)}</span>
+                <span style={{ color: 'var(--text-primary)' }}>${selectedRun.total_cost.toFixed(2)}</span>
               </div>
             </div>
           </div>

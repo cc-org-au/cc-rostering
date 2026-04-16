@@ -238,7 +238,7 @@ export default function OpenShiftsTab({
             style={{
               fontSize: 14,
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text-primary)",
               marginBottom: 14,
             }}
           >
@@ -294,7 +294,7 @@ export default function OpenShiftsTab({
                   padding: 10,
                   border: "1.5px solid #e5e7eb",
                   borderRadius: 8,
-                  background: "#fafafa",
+                  background: "var(--bg-surface)",
                 }}
               >
                 {STRENGTHS.map((s) => (
@@ -373,7 +373,7 @@ export default function OpenShiftsTab({
                         style={{
                           fontSize: 15,
                           fontWeight: 700,
-                          color: "#111827",
+                          color: "var(--text-primary)",
                         }}
                       >
                         {shift.date}
@@ -382,8 +382,8 @@ export default function OpenShiftsTab({
                         <span
                           style={{
                             fontSize: 12,
-                            color: "#6b7280",
-                            background: "#f3f4f6",
+                            color: "var(--text-muted)",
+                            background: "var(--bg-muted)",
                             padding: "2px 8px",
                             borderRadius: 99,
                           }}
@@ -413,7 +413,7 @@ export default function OpenShiftsTab({
                             flexShrink: 0,
                           }}
                         />
-                        <span style={{ fontSize: 13, color: "#374151" }}>
+                        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                           {proj.name}
                           {proj.client ? ` · ${proj.client}` : ""}
                         </span>
@@ -425,12 +425,12 @@ export default function OpenShiftsTab({
                       <div
                         style={{
                           fontSize: 13,
-                          color: "#6b7280",
+                          color: "var(--text-muted)",
                           marginBottom: 4,
                         }}
                       >
                         Role:{" "}
-                        <span style={{ color: "#374151", fontWeight: 500 }}>
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
                           {shift.required_role}
                         </span>
                       </div>
@@ -465,7 +465,7 @@ export default function OpenShiftsTab({
                         }}
                       >
                         <Avatar name={claimedEmp.name} />
-                        <span style={{ fontSize: 13, color: "#374151" }}>
+                        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                           Claimed by{" "}
                           <strong>{claimedEmp.name}</strong>
                         </span>
@@ -477,7 +477,7 @@ export default function OpenShiftsTab({
                       <div
                         style={{
                           fontSize: 13,
-                          color: "#6b7280",
+                          color: "var(--text-muted)",
                           fontStyle: "italic",
                           marginTop: 4,
                         }}
@@ -514,7 +514,7 @@ export default function OpenShiftsTab({
                       style={{
                         fontSize: 11,
                         fontWeight: 600,
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                         letterSpacing: "0.07em",
                         textTransform: "uppercase",
                         marginBottom: 6,
@@ -526,7 +526,7 @@ export default function OpenShiftsTab({
                       <div
                         style={{
                           fontSize: 13,
-                          color: "#9ca3af",
+                          color: "var(--text-faint)",
                           padding: "8px 0",
                         }}
                       >
@@ -546,7 +546,7 @@ export default function OpenShiftsTab({
                               padding: "6px 10px",
                               border: "1.5px solid #e5e7eb",
                               borderRadius: 8,
-                              background: "#f9fafb",
+                              background: "var(--bg-muted)",
                             }}
                           >
                             <Avatar name={emp.name} />
@@ -555,12 +555,12 @@ export default function OpenShiftsTab({
                                 style={{
                                   fontSize: 13,
                                   fontWeight: 500,
-                                  color: "#111827",
+                                  color: "var(--text-primary)",
                                 }}
                               >
                                 {emp.name}
                               </div>
-                              <div style={{ fontSize: 11, color: "#6b7280" }}>
+                              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                                 {emp.role}
                               </div>
                             </div>
@@ -716,7 +716,7 @@ export default function OpenShiftsTab({
             style={{
               fontSize: 14,
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text-primary)",
               marginBottom: 14,
             }}
           >
@@ -785,7 +785,7 @@ export default function OpenShiftsTab({
                 <div
                   style={{
                     fontSize: 12,
-                    color: "#9ca3af",
+                    color: "var(--text-faint)",
                     marginTop: 4,
                   }}
                 >
@@ -865,14 +865,14 @@ export default function OpenShiftsTab({
                             style={{
                               fontSize: 14,
                               fontWeight: 600,
-                              color: "#111827",
+                              color: "var(--text-primary)",
                             }}
                           >
                             {requester.name}
                           </span>
                         </div>
                       )}
-                      <span style={{ fontSize: 13, color: "#9ca3af" }}>→</span>
+                      <span style={{ fontSize: 13, color: "var(--text-faint)" }}>→</span>
                       {acceptor ? (
                         <div
                           style={{
@@ -886,7 +886,7 @@ export default function OpenShiftsTab({
                             style={{
                               fontSize: 14,
                               fontWeight: 600,
-                              color: "#111827",
+                              color: "var(--text-primary)",
                             }}
                           >
                             {acceptor.name}
@@ -896,7 +896,7 @@ export default function OpenShiftsTab({
                         <span
                           style={{
                             fontSize: 13,
-                            color: "#6b7280",
+                            color: "var(--text-muted)",
                             fontStyle: "italic",
                           }}
                         >
@@ -916,15 +916,15 @@ export default function OpenShiftsTab({
                         marginBottom: 4,
                       }}
                     >
-                      <span style={{ fontSize: 13, color: "#374151" }}>
+                      <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                         {swap.shift_date}
                       </span>
                       {dl && (
                         <span
                           style={{
                             fontSize: 12,
-                            color: "#6b7280",
-                            background: "#f3f4f6",
+                            color: "var(--text-muted)",
+                            background: "var(--bg-muted)",
                             padding: "2px 8px",
                             borderRadius: 99,
                           }}
@@ -948,7 +948,7 @@ export default function OpenShiftsTab({
                               background: proj.color,
                             }}
                           />
-                          <span style={{ fontSize: 13, color: "#374151" }}>
+                          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                             {proj.name}
                           </span>
                         </div>
@@ -960,7 +960,7 @@ export default function OpenShiftsTab({
                       <div
                         style={{
                           fontSize: 13,
-                          color: "#6b7280",
+                          color: "var(--text-muted)",
                           fontStyle: "italic",
                           marginBottom: 4,
                         }}
@@ -1057,7 +1057,7 @@ export default function OpenShiftsTab({
         }}
       >
         <h3
-          style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#111827" }}
+          style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}
         >
           Open Shifts &amp; Swaps
         </h3>

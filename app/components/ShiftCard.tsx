@@ -62,7 +62,7 @@ export function ShiftCard({
         >
           <div
             style={{
-              background: '#fff',
+              background: 'var(--bg-card)',
               border: `2px solid ${statusColor}`,
               borderRadius: 8,
               padding: '10px 12px',
@@ -88,7 +88,7 @@ export function ShiftCard({
                   flexShrink: 0,
                 }}
               />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#111827', flex: 1 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>
                 {projectName}
               </span>
               <span
@@ -105,12 +105,12 @@ export function ShiftCard({
               </span>
             </div>
 
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
               {date} · {startTime}-{endTime}
             </div>
 
             {role && (
-              <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4 }}>
                 {role}
               </div>
             )}
@@ -121,14 +121,14 @@ export function ShiftCard({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontSize: 11,
-                color: '#374151',
+                color: 'var(--text-secondary)',
               }}
             >
               <span style={{ fontWeight: 500 }}>
                 {assignedCount} / {requiredCount} assigned
               </span>
               {employeeName && (
-                <span style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>
                   {employeeName}
                 </span>
               )}

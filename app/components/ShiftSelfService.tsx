@@ -142,13 +142,13 @@ export function ShiftSelfService() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading self-service options...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading self-service options...</div>;
 
   const openShifts = shifts.filter((s) => !claims.find((c) => c.shift_id === s.id && c.status === 'approved'));
 
   return (
     <div style={{ padding: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
         Shift Self-Service
       </h3>
 
@@ -160,8 +160,8 @@ export function ShiftSelfService() {
             onClick={() => setTab(t as 'claims' | 'swaps')}
             style={{
               padding: '8px 12px',
-              background: tab === t ? '#4f46e5' : 'transparent',
-              color: tab === t ? '#fff' : '#6b7280',
+              background: tab === t ? 'var(--accent)' : 'transparent',
+              color: tab === t ? 'var(--on-accent)' : 'var(--text-muted)',
               border: 'none',
               borderRadius: 6,
               fontSize: 13,
@@ -178,7 +178,7 @@ export function ShiftSelfService() {
       {tab === 'claims' && (
         <div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
               Your Employee ID
             </label>
             <select
@@ -209,7 +209,7 @@ export function ShiftSelfService() {
                 <div
                   key={shift.id}
                   style={{
-                    background: '#fff',
+                    background: 'var(--bg-card)',
                     border: '1.5px solid #e5e7eb',
                     borderRadius: 10,
                     padding: 12,
@@ -219,10 +219,10 @@ export function ShiftSelfService() {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                       {projects[shift.project_id]?.name || 'Unknown Project'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
                       {shift.date} · {shift.start_time}-{shift.end_time}
                     </div>
                   </div>
@@ -231,8 +231,8 @@ export function ShiftSelfService() {
                     disabled={hasClaim !== undefined}
                     style={{
                       padding: '8px 16px',
-                      background: hasClaim ? '#d1d5db' : '#10b981',
-                      color: hasClaim ? '#6b7280' : '#fff',
+                      background: hasClaim ? 'var(--border-input)' : '#10b981',
+                      color: hasClaim ? 'var(--text-muted)' : '#fff',
                       border: 'none',
                       borderRadius: 6,
                       fontSize: 12,
@@ -246,14 +246,14 @@ export function ShiftSelfService() {
               );
             })}
             {openShifts.length === 0 && (
-              <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '20px' }}>
                 No open shifts available
               </div>
             )}
           </div>
 
           {/* Pending Claims */}
-          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 10 }}>
             Your Claims
           </h4>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -284,7 +284,7 @@ export function ShiftSelfService() {
                 ) : null;
               })}
             {claims.filter((c) => c.employee_id === currentEmpId).length === 0 && (
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>No claims yet</div>
+              <div style={{ fontSize: 12, color: 'var(--text-faint)' }}>No claims yet</div>
             )}
           </div>
         </div>
@@ -294,7 +294,7 @@ export function ShiftSelfService() {
       {tab === 'swaps' && (
         <div>
           <div style={{ display: 'grid', gap: 10 }}>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>
               Pending Swap Requests
             </h4>
             {swaps
@@ -308,7 +308,7 @@ export function ShiftSelfService() {
                   <div
                     key={swap.id}
                     style={{
-                      background: '#fff',
+                      background: 'var(--bg-card)',
                       border: '1.5px solid #e5e7eb',
                       borderRadius: 10,
                       padding: 12,
@@ -318,10 +318,10 @@ export function ShiftSelfService() {
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
                         {fromEmp?.name} ↔ {toEmp?.name}
                       </div>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
                         {projects[shift.project_id]?.name} - {shift.date} {shift.start_time}
                       </div>
                     </div>
@@ -361,12 +361,12 @@ export function ShiftSelfService() {
                 ) : null;
               })}
             {swaps.filter((s) => s.status === 'pending').length === 0 && (
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>No pending swaps</div>
+              <div style={{ fontSize: 12, color: 'var(--text-faint)' }}>No pending swaps</div>
             )}
           </div>
 
           {/* Approved Swaps */}
-          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginTop: 16, marginBottom: 8 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 16, marginBottom: 8 }}>
             Approved Swaps
           </h4>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -394,7 +394,7 @@ export function ShiftSelfService() {
                 ) : null;
               })}
             {swaps.filter((s) => s.status === 'approved').length === 0 && (
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>No approved swaps</div>
+              <div style={{ fontSize: 12, color: 'var(--text-faint)' }}>No approved swaps</div>
             )}
           </div>
         </div>

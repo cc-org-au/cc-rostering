@@ -110,7 +110,7 @@ export function NotificationAdminDashboard() {
               fontSize: 14,
               fontWeight: tab === t ? 600 : 500,
               cursor: 'pointer',
-              color: tab === t ? '#4f46e5' : '#6b7280',
+              color: tab === t ? 'var(--accent)' : '#6b7280',
               borderBottom: tab === t ? '2px solid #4f46e5' : 'none',
               marginBottom: -13
             }}
@@ -166,7 +166,7 @@ export function NotificationAdminDashboard() {
                       }}
                       style={{
                         padding: '8px 16px',
-                        background: '#4f46e5',
+                        background: 'var(--accent)',
                         color: '#fff',
                         border: 'none',
                         borderRadius: 6,

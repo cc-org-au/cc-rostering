@@ -20,34 +20,34 @@ export const fmtH      = n => Math.round(n*10)/10+"h";
 export const inits     = name => name.trim().split(/\s+/).map(n=>n[0]).join("").slice(0,2).toUpperCase();
 export const fmtDate   = d => d instanceof Date ? d.toISOString().slice(0,10) : d;
 
-export const cardSt  = (x={}) => ({background:"#fff",border:"1.5px solid #e5e7eb",borderRadius:12,padding:"16px 18px",marginBottom:10,...x});
-export const inpSt   = (x={}) => ({width:"100%",boxSizing:"border-box",padding:"10px 12px",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"#fff",color:"#111827",outline:"none",...x});
-export const selSt   = (x={}) => ({padding:"10px 12px",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"#fff",color:"#111827",outline:"none",cursor:"pointer",...x});
+export const cardSt  = (x={}) => ({background:"var(--bg-card)",border:"1.5px solid var(--border)",borderRadius:12,padding:"16px 18px",marginBottom:10,...x});
+export const inpSt   = (x={}) => ({width:"100%",boxSizing:"border-box",padding:"10px 12px",border:"1.5px solid var(--border-input)",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"var(--bg-card)",color:"var(--text-primary)",outline:"none",...x});
+export const selSt   = (x={}) => ({padding:"10px 12px",border:"1.5px solid var(--border-input)",borderRadius:8,fontSize:14,fontFamily:"inherit",background:"var(--bg-card)",color:"var(--text-primary)",outline:"none",cursor:"pointer",...x});
 
 export function ProgBar({pct,color}) {
   const c=pct>=100?"#dc2626":pct>=80?"#d97706":(color||"#059669");
-  return <div style={{height:7,borderRadius:99,background:"#f3f4f6",overflow:"hidden",marginTop:5}}><div style={{height:"100%",width:`${Math.min(pct,100)}%`,background:c,borderRadius:99,transition:"width 0.3s"}}/></div>;
+  return <div style={{height:7,borderRadius:99,background:"var(--prog-track)",overflow:"hidden",marginTop:5}}><div style={{height:"100%",width:`${Math.min(pct,100)}%`,background:c,borderRadius:99,transition:"width 0.3s"}}/></div>;
 }
 export function Avatar({name,color}) {
-  return <div style={{width:34,height:34,borderRadius:"50%",background:color||"#eef2ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,color:color?"#fff":"#4f46e5",flexShrink:0}}>{inits(name)}</div>;
+  return <div style={{width:34,height:34,borderRadius:"50%",background:color||"var(--avatar-bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,color:color?"#fff":"var(--avatar-fg)",flexShrink:0}}>{inits(name)}</div>;
 }
 export function Tag({children,bg,col}) {
   return <span style={{display:"inline-flex",alignItems:"center",padding:"3px 10px",borderRadius:99,fontSize:12,fontWeight:500,background:bg,color:col}}>{children}</span>;
 }
 export function SecTitle({children}) {
-  return <div style={{fontSize:11,fontWeight:600,color:"#6b7280",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>{children}</div>;
+  return <div style={{fontSize:11,fontWeight:600,color:"var(--text-muted)",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>{children}</div>;
 }
 export function Empty({icon,title,sub}) {
-  return <div style={{textAlign:"center",padding:"48px 24px",border:"2px dashed #e5e7eb",borderRadius:12}}><div style={{fontSize:32,marginBottom:8}}>{icon}</div><div style={{fontSize:15,fontWeight:500,color:"#6b7280",marginBottom:4}}>{title}</div><div style={{fontSize:13,color:"#9ca3af"}}>{sub}</div></div>;
+  return <div style={{textAlign:"center",padding:"48px 24px",border:"2px dashed var(--border)",borderRadius:12}}><div style={{fontSize:32,marginBottom:8}}>{icon}</div><div style={{fontSize:15,fontWeight:500,color:"var(--text-muted)",marginBottom:4}}>{title}</div><div style={{fontSize:13,color:"var(--text-faint)"}}>{sub}</div></div>;
 }
 export function BtnPri({onClick,children,style={},type="button"}) {
-  return <button type={type} onClick={onClick} style={{padding:"10px 18px",background:"#4f46e5",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontFamily:"inherit",fontWeight:500,cursor:"pointer",...style}}>{children}</button>;
+  return <button type={type} onClick={onClick} style={{padding:"10px 18px",background:"var(--accent)",color:"var(--on-accent)",border:"none",borderRadius:8,fontSize:14,fontFamily:"inherit",fontWeight:500,cursor:"pointer",...style}}>{children}</button>;
 }
 export function Btn({onClick,children,style={},type="button"}) {
-  return <button type={type} onClick={onClick} style={{padding:"9px 16px",background:"#fff",color:"#374151",border:"1.5px solid #d1d5db",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
+  return <button type={type} onClick={onClick} style={{padding:"9px 16px",background:"var(--btn-secondary-bg)",color:"var(--btn-secondary-text)",border:"1.5px solid var(--border-input)",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
 }
 export function BtnDanger({onClick,children,style={},type="button"}) {
-  return <button type={type} onClick={onClick} style={{padding:"9px 14px",background:"#fff5f5",color:"#dc2626",border:"1.5px solid #fecaca",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
+  return <button type={type} onClick={onClick} style={{padding:"9px 14px",background:"var(--danger-bg)",color:"var(--danger-text)",border:"1.5px solid var(--danger-border)",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
 }
 
 /** Confirmation dialog; uses z-index above typical overlays. */
@@ -68,7 +68,7 @@ export function ConfirmModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.35)",
+        background: "var(--overlay-confirm)",
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",
@@ -80,17 +80,17 @@ export function ConfirmModal({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#fff",
+          background: "var(--bg-card)",
           borderRadius: 16,
           padding: 24,
           width: "min(440px,100%)",
-          boxShadow: "0 4px 32px rgba(0,0,0,0.15)",
+          boxShadow: "var(--shadow-modal-strong)",
           marginTop: "10vh",
         }}
       >
-        <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 600, color: "#111827" }}>{title}</h3>
+        <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 600, color: "var(--text-primary)" }}>{title}</h3>
         {message ? (
-          <p style={{ margin: "0 0 20px", fontSize: 14, color: "#6b7280", lineHeight: 1.5 }}>{message}</p>
+          <p style={{ margin: "0 0 20px", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>{message}</p>
         ) : null}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
           <Btn onClick={onCancel}>{cancelLabel}</Btn>
@@ -105,40 +105,40 @@ export function ConfirmModal({
   );
 }
 export function BtnSuccess({onClick,children,style={}}) {
-  return <button onClick={onClick} style={{padding:"9px 14px",background:"#f0fdf4",color:"#166534",border:"1.5px solid #86efac",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
+  return <button onClick={onClick} style={{padding:"9px 14px",background:"var(--success-bg)",color:"var(--success-text)",border:"1.5px solid var(--success-border)",borderRadius:8,fontSize:13,fontFamily:"inherit",cursor:"pointer",...style}}>{children}</button>;
 }
 export function Overlay({onClose,children}) {
-  return <div onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.25)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,overflowY:"auto",padding:"32px 12px 48px"}}>{children}</div>;
+  return <div onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{position:"fixed",inset:0,background:"var(--overlay-scrim)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,overflowY:"auto",padding:"32px 12px 48px"}}>{children}</div>;
 }
 export function ModalBox({children,maxWidth=700}) {
-  return <div style={{background:"#fff",borderRadius:16,padding:24,width:`min(${maxWidth}px,100%)`,boxShadow:"0 4px 32px rgba(0,0,0,0.12)"}}>{children}</div>;
+  return <div style={{background:"var(--bg-card)",borderRadius:16,padding:24,width:`min(${maxWidth}px,100%)`,boxShadow:"var(--shadow-modal)"}}>{children}</div>;
 }
-export function Lbl({children}) { return <div style={{fontSize:13,fontWeight:600,color:"#374151",marginBottom:5}}>{children}</div>; }
+export function Lbl({children}) { return <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:5}}>{children}</div>; }
 export function Row2({children}) { return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{children}</div>; }
 export function FocusInp({value,onChange,placeholder,type="text",style={},disabled=false}) {
   return <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
-    style={inpSt({...style,...(disabled?{background:"#f9fafb",color:"#9ca3af"}:{})})}
-    onFocus={e=>{if(!disabled)e.target.style.borderColor="#4f46e5";}}
-    onBlur={e=>e.target.style.borderColor="#d1d5db"}/>;
+    style={inpSt({...style,...(disabled?{background:"var(--bg-input-disabled)",color:"var(--text-faint)"}:{})})}
+    onFocus={e=>{if(!disabled)e.target.style.borderColor="var(--focus-ring)";}}
+    onBlur={e=>e.target.style.borderColor="var(--border-input)"}/>;
 }
 export function FocusTxt({value,onChange,placeholder,rows=3}) {
   return <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
     style={inpSt({resize:"vertical"})}
-    onFocus={e=>e.target.style.borderColor="#4f46e5"}
-    onBlur={e=>e.target.style.borderColor="#d1d5db"}/>;
+    onFocus={e=>e.target.style.borderColor="var(--focus-ring)"}
+    onBlur={e=>e.target.style.borderColor="var(--border-input)"}/>;
 }
 export function ToggleBtn({options,value,onChange}) {
-  return <div style={{display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden",width:"fit-content"}}>
+  return <div style={{display:"flex",border:"1.5px solid var(--border-input)",borderRadius:8,overflow:"hidden",width:"fit-content"}}>
     {options.map(([v,label])=>(
       <button key={v} type="button" onClick={()=>onChange(v)}
-        style={{padding:"9px 16px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:value===v?"#4f46e5":"#fff",color:value===v?"#fff":"#374151"}}>
+        style={{padding:"9px 16px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:value===v?"var(--accent)":"var(--bg-card)",color:value===v?"var(--on-accent)":"var(--text-secondary)"}}>
         {label}
       </button>
     ))}
   </div>;
 }
 export function StrBtn({label,active,onClick}) {
-  return <button type="button" onClick={onClick} style={{padding:"4px 10px",borderRadius:99,fontSize:12,fontFamily:"inherit",cursor:"pointer",border:"1.5px solid",background:active?"#ecfdf5":"#fff",color:active?"#059669":"#6b7280",borderColor:active?"#6ee7b7":"#d1d5db"}}>{label}</button>;
+  return <button type="button" onClick={onClick} style={{padding:"4px 10px",borderRadius:99,fontSize:12,fontFamily:"inherit",cursor:"pointer",border:"1.5px solid",background:active?"var(--str-active-bg)":"var(--bg-card)",color:active?"var(--str-active-text)":"var(--text-muted)",borderColor:active?"var(--str-active-border)":"var(--border-input)"}}>{label}</button>;
 }
 
 export function StatusBadge({status}) {
@@ -224,7 +224,7 @@ export function Toast({ toast, onClose }) {
       color: s.col,
       fontSize: 14,
       marginBottom: 10,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      boxShadow: 'var(--shadow-toast)',
       animation: 'slideIn 0.3s ease-out'
     }}>
       <div style={{ fontSize: 16, fontWeight: 'bold', flexShrink: 0, marginTop: 2 }}>

@@ -74,12 +74,12 @@ export function AutomationStudio() {
     }
   };
 
-  if (loading) return <div style={{ padding: 20, color: '#6b7280' }}>Loading automation studio...</div>;
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading automation studio...</div>;
 
   return (
     <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', margin: 0 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
           Automation Studio
         </h3>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -87,8 +87,8 @@ export function AutomationStudio() {
             onClick={() => handleCreateWorkflow()}
             style={{
               padding: '8px 16px',
-              background: '#4f46e5',
-              color: '#fff',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
               border: 'none',
               borderRadius: 8,
               fontSize: 13,
@@ -116,7 +116,7 @@ export function AutomationStudio() {
                 position: 'absolute',
                 top: '100%',
                 right: 0,
-                background: '#fff',
+                background: 'var(--bg-card)',
                 border: '1px solid #d1d5db',
                 borderRadius: 8,
                 zIndex: 10,
@@ -138,7 +138,7 @@ export function AutomationStudio() {
                     fontSize: 12,
                     cursor: 'pointer',
                     borderBottom: '1px solid #e5e7eb',
-                    color: '#374151',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   {template.name}
@@ -155,7 +155,7 @@ export function AutomationStudio() {
           <div
             key={workflow.id}
             style={{
-              background: '#fff',
+              background: 'var(--bg-card)',
               border: '1.5px solid #e5e7eb',
               borderRadius: 10,
               padding: 14,
@@ -173,10 +173,10 @@ export function AutomationStudio() {
             />
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 2 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
                 {workflow.name}
               </div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                 Trigger: {workflow.trigger_type} · {workflow.actions.length} action(s)
               </div>
             </div>
@@ -228,15 +228,15 @@ export function AutomationStudio() {
       />
 
       {workflows.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-faint)' }}>
           <div style={{ fontSize: 14, marginBottom: 12 }}>No workflows configured yet</div>
           <button
             type="button"
             onClick={() => handleCreateWorkflow()}
             style={{
               padding: '8px 16px',
-              background: '#4f46e5',
-              color: '#fff',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
               border: 'none',
               borderRadius: 8,
               fontSize: 13,
@@ -254,7 +254,7 @@ export function AutomationStudio() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.25)',
+            background: 'var(--overlay-scrim)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -265,7 +265,7 @@ export function AutomationStudio() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#fff',
+              background: 'var(--bg-card)',
               borderRadius: 12,
               padding: 24,
               maxWidth: 600,
@@ -275,14 +275,14 @@ export function AutomationStudio() {
               boxShadow: '0 4px 32px rgba(0,0,0,0.12)',
             }}
           >
-            <h4 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16, margin: 0 }}>
+            <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, margin: 0 }}>
               {editingWorkflow.id.startsWith('workflow-') ? 'New Workflow' : 'Edit Workflow'}
             </h4>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
               {/* Workflow Name */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
                   Workflow Name
                 </label>
                 <input
@@ -305,7 +305,7 @@ export function AutomationStudio() {
 
               {/* Trigger Type */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
                   Trigger Event
                 </label>
                 <select
@@ -332,7 +332,7 @@ export function AutomationStudio() {
 
               {/* Actions */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>
                   Actions ({editingWorkflow.actions.length})
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -340,7 +340,7 @@ export function AutomationStudio() {
                     <div
                       key={idx}
                       style={{
-                        background: '#f9fafb',
+                        background: 'var(--bg-muted)',
                         border: '1px solid #e5e7eb',
                         borderRadius: 6,
                         padding: 8,
@@ -349,7 +349,7 @@ export function AutomationStudio() {
                         alignItems: 'center',
                       }}
                     >
-                      <span style={{ fontSize: 12, color: '#374151' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                         {action.type.replace(/_/g, ' ')}
                       </span>
                       <button
@@ -406,7 +406,7 @@ export function AutomationStudio() {
                 onClick={() => setEditingWorkflow(null)}
                 style={{
                   padding: '8px 16px',
-                  background: '#fff',
+                  background: 'var(--bg-card)',
                   border: '1.5px solid #d1d5db',
                   borderRadius: 8,
                   fontSize: 13,
@@ -419,8 +419,8 @@ export function AutomationStudio() {
                 onClick={() => handleSaveWorkflow(editingWorkflow)}
                 style={{
                   padding: '8px 16px',
-                  background: '#4f46e5',
-                  color: '#fff',
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
                   border: 'none',
                   borderRadius: 8,
                   fontSize: 13,

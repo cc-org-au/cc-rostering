@@ -203,18 +203,18 @@ export default function TimesheetTab({
             {/* Employee header */}
             <div style={{
               display: "flex", alignItems: "center", gap: 12, padding: "14px 18px",
-              background: "#f9fafb", borderBottom: "1.5px solid #e5e7eb",
+              background: "var(--bg-muted)", borderBottom: "1.5px solid #e5e7eb",
             }}>
-              <Avatar name={emp.name} color="#4f46e5" />
+              <Avatar name={emp.name} color="var(--accent)" />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>{emp.name}</div>
-                <div style={{ fontSize: 12, color: "#6b7280" }}>{emp.role}{rate > 0 ? ` · $${rate}/hr` : ""}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{emp.name}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{emp.role}{rate > 0 ? ` · $${rate}/hr` : ""}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                   {totalActual}h actual
                 </div>
-                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   {totalRostered}h rostered
                   {rate > 0 && ` · $${Math.round(totalActual * rate).toLocaleString()} cost`}
                 </div>
@@ -242,9 +242,9 @@ export default function TimesheetTab({
                   }}>
                     {/* Date */}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
                         {entry.date.slice(8)}{" "}
-                        <span style={{ color: "#9ca3af", fontWeight: 400 }}>
+                        <span style={{ color: "var(--text-faint)", fontWeight: 400 }}>
                           {MONTHS[rMonth].slice(0, 3)}
                         </span>
                       </div>
@@ -255,7 +255,7 @@ export default function TimesheetTab({
                       {proj && (
                         <span style={{ width: 8, height: 8, borderRadius: "50%", background: proj.color, flexShrink: 0 }} />
                       )}
-                      <span style={{ fontSize: 13, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: 13, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {proj?.name ?? "—"}
                       </span>
                     </div>
@@ -272,7 +272,7 @@ export default function TimesheetTab({
                       onBlur={() => saveHoursAndNotes(emp.id, day)}
                       style={inpSt({
                         width: 80, textAlign: "center", padding: "7px 8px",
-                        ...(isApproved ? { background: "#f9fafb", color: "#9ca3af" } : {}),
+                        ...(isApproved ? { background: "var(--bg-muted)", color: "var(--text-faint)" } : {}),
                       })}
                     />
 
@@ -289,7 +289,7 @@ export default function TimesheetTab({
                       onBlur={() => saveHoursAndNotes(emp.id, day)}
                       style={inpSt({
                         fontSize: 12, padding: "7px 10px",
-                        ...(isApproved ? { background: "#f9fafb", color: "#9ca3af" } : {}),
+                        ...(isApproved ? { background: "var(--bg-muted)", color: "var(--text-faint)" } : {}),
                       })}
                     />
 
@@ -323,7 +323,7 @@ export default function TimesheetTab({
                             onClick={() => changeStatus(emp.id, day, "draft")}
                             style={{
                               padding: "5px 10px", borderRadius: 6, border: "1.5px solid #d1d5db",
-                              background: "#fff", color: "#374151", fontSize: 12,
+                              background: "var(--bg-card)", color: "var(--text-secondary)", fontSize: 12,
                               fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
                             }}
                           >
@@ -336,7 +336,7 @@ export default function TimesheetTab({
                           onClick={() => changeStatus(emp.id, day, "draft")}
                           style={{
                             padding: "5px 10px", borderRadius: 6, border: "1.5px solid #d1d5db",
-                            background: "#fff", color: "#374151", fontSize: 12,
+                            background: "var(--bg-card)", color: "var(--text-secondary)", fontSize: 12,
                             fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
                           }}
                         >
@@ -352,19 +352,19 @@ export default function TimesheetTab({
             {/* Summary row */}
             <div style={{
               display: "flex", justifyContent: "flex-end", gap: 16, padding: "10px 18px",
-              background: "#f9fafb", borderTop: "1.5px solid #e5e7eb", fontSize: 13,
+              background: "var(--bg-muted)", borderTop: "1.5px solid #e5e7eb", fontSize: 13,
             }}>
-              <span style={{ color: "#6b7280" }}>
-                Rostered: <strong style={{ color: "#111827" }}>{totalRostered}h ({days.length}d)</strong>
+              <span style={{ color: "var(--text-muted)" }}>
+                Rostered: <strong style={{ color: "var(--text-primary)" }}>{totalRostered}h ({days.length}d)</strong>
               </span>
-              <span style={{ color: "#6b7280" }}>
+              <span style={{ color: "var(--text-muted)" }}>
                 Actual: <strong style={{ color: totalActual < totalRostered ? "#d97706" : "#059669" }}>
                   {totalActual}h
                 </strong>
               </span>
               {rate > 0 && (
-                <span style={{ color: "#6b7280" }}>
-                  Cost: <strong style={{ color: "#111827" }}>${Math.round(totalActual * rate).toLocaleString()}</strong>
+                <span style={{ color: "var(--text-muted)" }}>
+                  Cost: <strong style={{ color: "var(--text-primary)" }}>${Math.round(totalActual * rate).toLocaleString()}</strong>
                 </span>
               )}
             </div>

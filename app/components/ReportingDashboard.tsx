@@ -188,15 +188,15 @@ export function ReportingDashboard() {
 
   return (
     <div style={{ padding: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
         Advanced Reporting
       </h3>
 
       {/* Report Filters */}
-      <div style={{ background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+      <div style={{ background: 'var(--bg-muted)', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
               Report Type
             </label>
             <select
@@ -219,7 +219,7 @@ export function ReportingDashboard() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
               Start Date
             </label>
             <input
@@ -238,7 +238,7 @@ export function ReportingDashboard() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
               End Date
             </label>
             <input
@@ -263,8 +263,8 @@ export function ReportingDashboard() {
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                background: '#4f46e5',
-                color: '#fff',
+                background: 'var(--accent)',
+                color: 'var(--on-accent)',
                 border: 'none',
                 borderRadius: 6,
                 fontSize: 12,
@@ -282,7 +282,7 @@ export function ReportingDashboard() {
       {/* Report Content */}
       {data && (
         <div>
-          <h4 style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 12 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
             {data.title}
           </h4>
 
@@ -291,16 +291,16 @@ export function ReportingDashboard() {
               <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1.5px solid #e5e7eb' }}>
-                    <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Employee
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Scheduled
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Actual
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Variance
                     </th>
                   </tr>
@@ -308,11 +308,11 @@ export function ReportingDashboard() {
                 <tbody>
                   {data.employees.map((emp: any, idx: number) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '8px', color: '#111827' }}>{emp.name}</td>
-                      <td style={{ textAlign: 'right', padding: '8px', color: '#374151' }}>
+                      <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{emp.name}</td>
+                      <td style={{ textAlign: 'right', padding: '8px', color: 'var(--text-secondary)' }}>
                         {emp.scheduledHours.toFixed(1)}h
                       </td>
-                      <td style={{ textAlign: 'right', padding: '8px', color: '#374151' }}>
+                      <td style={{ textAlign: 'right', padding: '8px', color: 'var(--text-secondary)' }}>
                         {emp.actualHours.toFixed(1)}h
                       </td>
                       <td
@@ -320,7 +320,7 @@ export function ReportingDashboard() {
                           textAlign: 'right',
                           padding: '8px',
                           fontWeight: 500,
-                          color: emp.variance > 0 ? '#dc2626' : emp.variance < 0 ? '#10b981' : '#6b7280',
+                          color: emp.variance > 0 ? '#dc2626' : emp.variance < 0 ? '#10b981' : 'var(--text-muted)',
                         }}
                       >
                         {emp.variance > 0 ? '+' : ''}{emp.variance.toFixed(1)}h ({emp.variancePercent}%)
@@ -343,13 +343,13 @@ export function ReportingDashboard() {
                   <div
                     key={stat.label}
                     style={{
-                      background: '#f9fafb',
+                      background: 'var(--bg-muted)',
                       border: '1.5px solid #e5e7eb',
                       borderRadius: 8,
                       padding: 12,
                     }}
                   >
-                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>{stat.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{stat.label}</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: stat.color }}>{stat.value}</div>
                   </div>
                 ))}
@@ -359,16 +359,16 @@ export function ReportingDashboard() {
                 <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1.5px solid #e5e7eb' }}>
-                      <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                      <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                         Employee
                       </th>
-                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                         Gross
                       </th>
-                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                         Deductions
                       </th>
-                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                         Net
                       </th>
                     </tr>
@@ -380,11 +380,11 @@ export function ReportingDashboard() {
                       const totalNet = emp.items.reduce((sum: number, item: any) => sum + item.net_amount, 0);
                       return (
                         <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                          <td style={{ padding: '8px', color: '#111827' }}>{emp.name}</td>
-                          <td style={{ textAlign: 'right', padding: '8px', color: '#374151' }}>
+                          <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{emp.name}</td>
+                          <td style={{ textAlign: 'right', padding: '8px', color: 'var(--text-secondary)' }}>
                             ${totalGross.toFixed(2)}
                           </td>
-                          <td style={{ textAlign: 'right', padding: '8px', color: '#374151' }}>
+                          <td style={{ textAlign: 'right', padding: '8px', color: 'var(--text-secondary)' }}>
                             ${totalDeductions.toFixed(2)}
                           </td>
                           <td style={{ textAlign: 'right', padding: '8px', fontWeight: 500, color: '#059669' }}>
@@ -404,20 +404,20 @@ export function ReportingDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
                 {[
                   { label: 'Compliance Score', value: `${data.complianceScore}%`, color: data.complianceScore >= 80 ? '#10b981' : '#f59e0b' },
-                  { label: 'Rules Applied', value: data.rulesApplied, color: '#111827' },
-                  { label: 'Shifts Checked', value: data.shiftsChecked, color: '#111827' },
+                  { label: 'Rules Applied', value: data.rulesApplied, color: 'var(--text-primary)' },
+                  { label: 'Shifts Checked', value: data.shiftsChecked, color: 'var(--text-primary)' },
                   { label: 'Violations', value: data.violations.length, color: '#dc2626' },
                 ].map((stat) => (
                   <div
                     key={stat.label}
                     style={{
-                      background: '#f9fafb',
+                      background: 'var(--bg-muted)',
                       border: '1.5px solid #e5e7eb',
                       borderRadius: 8,
                       padding: 12,
                     }}
                   >
-                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>{stat.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{stat.label}</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: stat.color }}>{stat.value}</div>
                   </div>
                 ))}
@@ -430,16 +430,16 @@ export function ReportingDashboard() {
               <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1.5px solid #e5e7eb' }}>
-                    <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Employee
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Allocated
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Max
                     </th>
-                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: '#6b7280' }}>
+                    <th style={{ textAlign: 'right', padding: '8px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       Utilization
                     </th>
                   </tr>
@@ -447,11 +447,11 @@ export function ReportingDashboard() {
                 <tbody>
                   {data.employees.map((emp: any, idx: number) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '8px', color: '#111827' }}>{emp.name}</td>
-                      <td style={{ textAlign: 'right', padding: '8px', color: '#374151' }}>
+                      <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{emp.name}</td>
+                      <td style={{ textAlign: 'right', padding: '8px', color: 'var(--text-secondary)' }}>
                         {emp.allocatedHours.toFixed(1)}h
                       </td>
-                      <td style={{ textAlign: 'right', padding: '8px', color: '#374151' }}>
+                      <td style={{ textAlign: 'right', padding: '8px', color: 'var(--text-secondary)' }}>
                         {emp.maxHours}h
                       </td>
                       <td
