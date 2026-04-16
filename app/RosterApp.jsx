@@ -2,15 +2,12 @@
 
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { supabase } from '../lib/supabase';
+import UserMenu from './components/UserMenu';
+import AdminPanel from './components/AdminPanel';
+import { SchedulerDragDrop } from './components/SchedulerDragDrop';
+import { DAYS_SHORT, MONTHS, EMP_TYPES, ROLES, STRENGTHS, PROJ_COLORS, HPD } from './components/shared';
 
-const DAYS_SHORT  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const EMP_TYPES   = ["Full-time","Part-time","Casual","Contract","Apprentice"];
-const ROLES       = ["Project Manager","Site Supervisor","Foreman","Labourer","Electrician","Plumber","Carpenter","Concreter","Operator","Other"];
-const STRENGTHS   = ["Chainsawing","Brushcutting","Hand weeding","Herbicide application","Planting & tubestock","Seed collection","Mulching","Erosion control","Revegetation","Bush regeneration","Weed identification","Fauna surveys","Flora surveys","Ecological assessment","Riparian restoration","Coastal restoration","Grassland management","Rainforest restoration","Fencing","Track construction","Photo monitoring","Community engagement","Traffic control","First aid","4WD operation","Other"];
-const PROJ_COLORS = ["#4f46e5","#0891b2","#059669","#d97706","#dc2626","#7c3aed","#db2777","#0284c7","#16a34a","#ea580c"];
-const TABS        = ["Projects","Employees","Roster","Capacity","Summary"];
-const HPD         = 8;
+const TABS        = ["Projects","Employees","Scheduler","Roster","Capacity","Summary","Admin"];
 const NOW         = new Date();
 
 // ── pure utils ────────────────────────────────────────────────────────────────
@@ -177,7 +174,7 @@ function StrBtn({label,active,onClick}) {
 }
 
 // ── App ───────────────────────────────────────────────────────────────────────
-export default function App() {
+export default function App({ auth, demoMode }) {
   const [tab,setTab]          = useState("Projects");
   const [projects,setProj]    = useState([]);
   const [employees,setEmps]   = useState([]);
@@ -1081,18 +1078,41 @@ export default function App() {
       Loading…
     </div>
   );
+
+  // Role-based tab visibility
+  const visibleTabs = TABS.filter(t => {
+    if (!auth || !auth.profile) return false;
+    const role = auth.profile.role;
+    if (t === "Admin") return role === "admin";
+    if (t === "Capacity") return ["admin", "manager"].includes(role);
+    if (t === "Summary") return ["admin", "manager", "dispatcher"].includes(role);
+    if (t === "Roster") return ["admin", "manager", "dispatcher"].includes(role);
+    return true;
+  });
+
+  const effectiveTab = visibleTabs.includes(tab) ? tab : visibleTabs[0] || "Projects";
+
   return (
     <div style={{fontFamily:"system-ui,-apple-system,sans-serif",padding:"1rem",maxWidth:1100,margin:"0 auto",color:"#111827"}}>
-      <h2 style={{fontSize:24,fontWeight:700,margin:"0 0 4px",color:"#111827"}}>Roster manager</h2>
-      <p style={{fontSize:13,color:"#6b7280",margin:"0 0 16px"}}>7:00 am – 3:30 pm · 8h days</p>
-      <div style={{display:"flex",borderBottom:"1.5px solid #e5e7eb",marginBottom:20,overflowX:"auto"}}>
-        {TABS.map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"10px 16px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",fontSize:14,color:tab===t?"#111827":"#6b7280",borderBottom:tab===t?"2px solid #4f46e5":"2px solid transparent",marginBottom:-1,fontWeight:tab===t?600:400,whiteSpace:"nowrap"}}>{t}</button>)}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div>
+          <h2 style={{fontSize:24,fontWeight:700,margin:"0 0 4px",color:"#111827"}}>Roster manager</h2>
+          <p style={{fontSize:13,color:"#6b7280",margin:0}}>7:00 am – 3:30 pm · 8h days</p>
+        </div>
+        {auth && <UserMenu auth={auth}/>}
       </div>
-      {tab==="Projects"  && <ProjectsTab/>}
-      {tab==="Employees" && <EmployeesTab/>}
-      {tab==="Roster"    && <RosterTab/>}
-      {tab==="Capacity"  && <CapacityTab/>}
-      {tab==="Summary"   && <SummaryTab/>}
+
+      <div style={{display:"flex",borderBottom:"1.5px solid #e5e7eb",marginBottom:20,overflowX:"auto"}}>
+        {visibleTabs.map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"10px 16px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",fontSize:14,color:effectiveTab===t?"#111827":"#6b7280",borderBottom:effectiveTab===t?"2px solid #4f46e5":"2px solid transparent",marginBottom:-1,fontWeight:effectiveTab===t?600:400,whiteSpace:"nowrap"}}>{t}</button>)}
+      </div>
+
+      {effectiveTab==="Projects"  && <ProjectsTab/>}
+      {effectiveTab==="Employees" && <EmployeesTab/>}
+      {effectiveTab==="Scheduler"  && <SchedulerDragDrop/>}
+      {effectiveTab==="Roster"    && <RosterTab/>}
+      {effectiveTab==="Capacity"  && <CapacityTab/>}
+      {effectiveTab==="Summary"   && <SummaryTab/>}
+      {effectiveTab==="Admin"     && auth && <AdminPanel auth={auth}/>}
       {dayEd   !== null && <DayEditorModal day={dayEd}/>}
       {projMod !== null && <ProjectModal key={pTick}/>}
       {empMod  !== null && <EmployeeModal key={eTick}/>}
