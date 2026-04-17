@@ -203,7 +203,7 @@ export default function TimesheetTab({
             {/* Employee header */}
             <div style={{
               display: "flex", alignItems: "center", gap: 12, padding: "14px 18px",
-              background: "var(--bg-muted)", borderBottom: "1.5px solid #e5e7eb",
+              background: "var(--bg-muted)", borderBottom: "1.5px solid var(--border)",
             }}>
               <Avatar name={emp.name} color="var(--accent)" />
               <div style={{ flex: 1 }}>
@@ -237,8 +237,8 @@ export default function TimesheetTab({
                     gap: 8,
                     alignItems: "center",
                     padding: "10px 18px",
-                    borderBottom: "1px solid #f3f4f6",
-                    background: isApproved ? "#f0fdf4" : "#fff",
+                    borderBottom: "1px solid var(--border-soft)",
+                    background: isApproved ? "var(--success-bg)" : "var(--bg-card)",
                   }}>
                     {/* Date */}
                     <div>
@@ -299,8 +299,8 @@ export default function TimesheetTab({
                         <button
                           onClick={() => changeStatus(emp.id, day, "submitted")}
                           style={{
-                            padding: "5px 10px", borderRadius: 6, border: "1.5px solid #bfdbfe",
-                            background: "#eff6ff", color: "#1d4ed8", fontSize: 12,
+                            padding: "5px 10px", borderRadius: 6, border: "1.5px solid var(--info-border)",
+                            background: "var(--info-bg)", color: "var(--info-text-strong)", fontSize: 12,
                             fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
                           }}
                         >
@@ -312,8 +312,8 @@ export default function TimesheetTab({
                           <button
                             onClick={() => changeStatus(emp.id, day, "approved")}
                             style={{
-                              padding: "5px 10px", borderRadius: 6, border: "1.5px solid #86efac",
-                              background: "#f0fdf4", color: "#166534", fontSize: 12,
+                              padding: "5px 10px", borderRadius: 6, border: "1.5px solid var(--success-border)",
+                              background: "var(--success-bg)", color: "var(--success-text)", fontSize: 12,
                               fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
                             }}
                           >
@@ -322,7 +322,7 @@ export default function TimesheetTab({
                           <button
                             onClick={() => changeStatus(emp.id, day, "draft")}
                             style={{
-                              padding: "5px 10px", borderRadius: 6, border: "1.5px solid #d1d5db",
+                              padding: "5px 10px", borderRadius: 6, border: "1.5px solid var(--border-input)",
                               background: "var(--bg-card)", color: "var(--text-secondary)", fontSize: 12,
                               fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
                             }}
@@ -335,7 +335,7 @@ export default function TimesheetTab({
                         <button
                           onClick={() => changeStatus(emp.id, day, "draft")}
                           style={{
-                            padding: "5px 10px", borderRadius: 6, border: "1.5px solid #d1d5db",
+                            padding: "5px 10px", borderRadius: 6, border: "1.5px solid var(--border-input)",
                             background: "var(--bg-card)", color: "var(--text-secondary)", fontSize: 12,
                             fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
                           }}
@@ -352,13 +352,13 @@ export default function TimesheetTab({
             {/* Summary row */}
             <div style={{
               display: "flex", justifyContent: "flex-end", gap: 16, padding: "10px 18px",
-              background: "var(--bg-muted)", borderTop: "1.5px solid #e5e7eb", fontSize: 13,
+              background: "var(--bg-muted)", borderTop: "1.5px solid var(--border)", fontSize: 13,
             }}>
               <span style={{ color: "var(--text-muted)" }}>
                 Rostered: <strong style={{ color: "var(--text-primary)" }}>{totalRostered}h ({days.length}d)</strong>
               </span>
               <span style={{ color: "var(--text-muted)" }}>
-                Actual: <strong style={{ color: totalActual < totalRostered ? "#d97706" : "#059669" }}>
+                Actual: <strong style={{ color: totalActual < totalRostered ? "var(--surface-warn-text)" : "var(--success-text)" }}>
                   {totalActual}h
                 </strong>
               </span>

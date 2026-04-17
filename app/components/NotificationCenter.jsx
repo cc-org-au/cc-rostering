@@ -44,9 +44,10 @@ export function NotificationCenter() {
   // Filter notifications
   const filteredNotifications = notifications.filter(n => {
     const matchesFilter = filter === 'all' || (NOTIFICATION_TYPES[n.type]?.label || 'Other') === filter;
-    const matchesSearch = searchQuery === '' || 
-      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.message.toLowerCase().includes(searchQuery.toLowerCase());
+    const t = (n.title ?? '').toLowerCase();
+    const m = (n.message ?? '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = searchQuery === '' || t.includes(q) || m.includes(q);
     return matchesFilter && matchesSearch;
   });
 
@@ -101,8 +102,8 @@ export function NotificationCenter() {
               position: 'absolute',
               top: 0,
               right: 0,
-              background: '#dc2626',
-              color: '#fff',
+              background: 'var(--danger-text)',
+              color: 'var(--on-accent)',
               borderRadius: '50%',
               width: 20,
               height: 20,
@@ -123,9 +124,9 @@ export function NotificationCenter() {
             position: 'absolute',
             top: '100%',
             right: 0,
-            background: '#fff',
+            background: 'var(--bg-card)',
             borderRadius: 12,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+            boxShadow: 'var(--shadow-modal-strong)',
             width: 420,
             maxHeight: 600,
             zIndex: 100,
@@ -136,17 +137,17 @@ export function NotificationCenter() {
             {/* Header */}
             <div style={{
               padding: '16px 18px',
-              borderBottom: '1.5px solid #e5e7eb',
+              borderBottom: '1.5px solid var(--border)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
                   Notifications
                 </div>
                 {unreadCount > 0 && (
-                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
                     {unreadCount} unread
                   </div>
                 )}
@@ -187,7 +188,7 @@ export function NotificationCenter() {
             {/* Filter Tabs */}
             <div style={{
               padding: '12px 18px',
-              borderBottom: '1.5px solid #e5e7eb',
+              borderBottom: '1.5px solid var(--border)',
               display: 'flex',
               gap: 6,
               overflowX: 'auto'
@@ -203,8 +204,8 @@ export function NotificationCenter() {
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: 'pointer',
-                    background: (tab === 'All' ? filter === 'all' : filter === tab) ? '#eef2ff' : 'transparent',
-                    color: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent)' : '#6b7280',
+                    background: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent-soft)' : 'transparent',
+                    color: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent)' : 'var(--text-muted)',
                     whiteSpace: 'nowrap'
                   }}
                 >
@@ -214,7 +215,7 @@ export function NotificationCenter() {
             </div>
 
             {/* Search */}
-            <div style={{ padding: '12px 18px', borderBottom: '1.5px solid #e5e7eb' }}>
+            <div style={{ padding: '12px 18px', borderBottom: '1.5px solid var(--border)' }}>
               <input
                 type="text"
                 placeholder="Search notifications..."
@@ -223,10 +224,12 @@ export function NotificationCenter() {
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  border: '1.5px solid #d1d5db',
+                  border: '1.5px solid var(--border-input)',
                   borderRadius: 6,
                   fontSize: 13,
-                  outline: 'none'
+                  outline: 'none',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-primary)',
                 }}
               />
             </div>
@@ -238,16 +241,16 @@ export function NotificationCenter() {
               minHeight: 0
             }}>
               {loading ? (
-                <div style={{ padding: '32px 18px', textAlign: 'center', color: '#9ca3af' }}>
+                <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--text-faint)' }}>
                   Loading...
                 </div>
               ) : filteredNotifications.length === 0 ? (
-                <div style={{ padding: '32px 18px', textAlign: 'center', color: '#9ca3af' }}>
+                <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--text-faint)' }}>
                   No notifications
                 </div>
               ) : (
                 filteredNotifications.slice(0, 10).map(notif => {
-                  const typeInfo = NOTIFICATION_TYPES[notif.type] || { icon: '📌', color: '#6b7280' };
+                  const typeInfo = NOTIFICATION_TYPES[notif.type] || { icon: '📌', color: 'var(--text-muted)' };
                   return (
                     <div
                       key={notif.id}
@@ -257,16 +260,16 @@ export function NotificationCenter() {
                       }}
                       style={{
                         padding: '12px 18px',
-                        borderBottom: '1px solid #f3f4f6',
+                        borderBottom: '1px solid var(--border-soft)',
                         cursor: 'pointer',
-                        background: notif.read ? '#fff' : '#f9fafb',
+                        background: notif.read ? 'var(--bg-card)' : 'var(--bg-muted)',
                         transition: 'background 0.2s',
                         display: 'flex',
                         gap: 12,
                         alignItems: 'flex-start'
                       }}
-                      onMouseEnter={(e) => { if (!notif.read) e.currentTarget.style.background = '#f0fdf4'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = notif.read ? '#fff' : '#f9fafb'; }}
+                      onMouseEnter={(e) => { if (!notif.read) e.currentTarget.style.background = 'var(--success-bg)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = notif.read ? 'var(--bg-card)' : 'var(--bg-muted)'; }}
                     >
                       <div style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>
                         {typeInfo.icon}
@@ -275,7 +278,7 @@ export function NotificationCenter() {
                         <div style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: '#111827',
+                          color: 'var(--text-primary)',
                           marginBottom: 2,
                           display: 'flex',
                           gap: 6,
@@ -294,7 +297,7 @@ export function NotificationCenter() {
                         </div>
                         <div style={{
                           fontSize: 12,
-                          color: '#6b7280',
+                          color: 'var(--text-muted)',
                           marginBottom: 4,
                           lineHeight: 1.4
                         }}>
@@ -302,7 +305,7 @@ export function NotificationCenter() {
                         </div>
                         <div style={{
                           fontSize: 11,
-                          color: '#9ca3af'
+                          color: 'var(--text-faint)'
                         }}>
                           {formatTime(notif.created_at)}
                         </div>
@@ -315,7 +318,7 @@ export function NotificationCenter() {
                         style={{
                           background: 'none',
                           border: 'none',
-                          color: '#d1d5db',
+                          color: 'var(--text-faint)',
                           cursor: 'pointer',
                           fontSize: 14,
                           padding: '4px 6px',
@@ -335,7 +338,7 @@ export function NotificationCenter() {
             {filteredNotifications.length > 10 && (
               <div style={{
                 padding: '12px 18px',
-                borderTop: '1.5px solid #e5e7eb',
+                borderTop: '1.5px solid var(--border)',
                 display: 'flex',
                 justifyContent: 'center'
               }}>
@@ -376,7 +379,7 @@ export function NotificationCenter() {
         <Overlay onClose={() => setShowFullList(false)}>
           <ModalBox maxWidth={600}>
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: '#111827' }}>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text-primary)' }}>
                 All Notifications
               </div>
               <div style={{
@@ -396,8 +399,8 @@ export function NotificationCenter() {
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: 'pointer',
-                      background: (tab === 'All' ? filter === 'all' : filter === tab) ? '#eef2ff' : '#f3f4f6',
-                      color: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent)' : '#6b7280'
+                      background: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent-soft)' : 'var(--bg-muted)',
+                      color: (tab === 'All' ? filter === 'all' : filter === tab) ? 'var(--accent)' : 'var(--text-muted)'
                     }}
                   >
                     {tab}
@@ -412,7 +415,7 @@ export function NotificationCenter() {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  border: '1.5px solid #d1d5db',
+                  border: '1.5px solid var(--border-input)',
                   borderRadius: 8,
                   fontSize: 13,
                   outline: 'none',
@@ -421,14 +424,14 @@ export function NotificationCenter() {
               />
               <div style={{ maxHeight: 400, overflowY: 'auto' }}>
                 {filteredNotifications.map(notif => {
-                  const typeInfo = NOTIFICATION_TYPES[notif.type] || { icon: '📌', color: '#6b7280' };
+                  const typeInfo = NOTIFICATION_TYPES[notif.type] || { icon: '📌', color: 'var(--text-muted)' };
                   return (
                     <div
                       key={notif.id}
                       style={{
                         padding: '12px 14px',
-                        borderBottom: '1px solid #e5e7eb',
-                        background: notif.read ? '#fff' : '#f9fafb',
+                        borderBottom: '1px solid var(--border)',
+                        background: notif.read ? 'var(--bg-card)' : 'var(--bg-muted)',
                         display: 'flex',
                         gap: 12,
                         alignItems: 'flex-start'
@@ -441,21 +444,21 @@ export function NotificationCenter() {
                         <div style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: '#111827',
+                          color: 'var(--text-primary)',
                           marginBottom: 2
                         }}>
                           {notif.title}
                         </div>
                         <div style={{
                           fontSize: 12,
-                          color: '#6b7280',
+                          color: 'var(--text-muted)',
                           marginBottom: 4
                         }}>
                           {notif.message}
                         </div>
                         <div style={{
                           fontSize: 11,
-                          color: '#9ca3af'
+                          color: 'var(--text-faint)'
                         }}>
                           {formatTime(notif.created_at)}
                         </div>
@@ -465,7 +468,7 @@ export function NotificationCenter() {
                         style={{
                           background: 'none',
                           border: 'none',
-                          color: '#d1d5db',
+                          color: 'var(--text-faint)',
                           cursor: 'pointer',
                           fontSize: 14,
                           padding: '4px 6px'
@@ -508,7 +511,7 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
 
   return (
     <div>
-      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, color: '#111827' }}>
+      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, color: 'var(--text-primary)' }}>
         Notification Preferences
       </div>
 
@@ -534,7 +537,7 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
                 onChange={(e) => setSettings({ ...settings, [key]: e.target.checked })}
                 style={{ cursor: 'pointer', width: 18, height: 18 }}
               />
-              <span style={{ fontSize: 14, color: '#374151' }}>{label}</span>
+              <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{label}</span>
             </label>
           ))}
         </div>
@@ -557,7 +560,7 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
             onChange={(e) => setSettings({ ...settings, quiet_hours_enabled: e.target.checked })}
             style={{ cursor: 'pointer', width: 18, height: 18 }}
           />
-          <span style={{ fontSize: 14, color: '#374151' }}>Enable quiet hours</span>
+          <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Enable quiet hours</span>
         </label>
         {settings.quiet_hours_enabled && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -570,7 +573,7 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
                 style={{
                   width: '100%',
                   padding: '8px 10px',
-                  border: '1.5px solid #d1d5db',
+                  border: '1.5px solid var(--border-input)',
                   borderRadius: 6,
                   fontSize: 13
                 }}
@@ -585,7 +588,7 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
                 style={{
                   width: '100%',
                   padding: '8px 10px',
-                  border: '1.5px solid #d1d5db',
+                  border: '1.5px solid var(--border-input)',
                   borderRadius: 6,
                   fontSize: 13
                 }}
@@ -611,7 +614,7 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
             onChange={(e) => setSettings({ ...settings, notification_sounds_enabled: e.target.checked })}
             style={{ cursor: 'pointer', width: 18, height: 18 }}
           />
-          <span style={{ fontSize: 14, color: '#374151' }}>Enable notification sounds</span>
+          <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Enable notification sounds</span>
         </label>
       </div>
 
@@ -621,8 +624,8 @@ export function NotificationPreferences({ preferences, onUpdate, onClose }) {
           padding: '10px 12px',
           borderRadius: 6,
           marginBottom: 16,
-          background: message.includes('Error') ? '#fee2e2' : '#dcfce7',
-          color: message.includes('Error') ? '#dc2626' : '#166534',
+          background: message.includes('Error') ? 'var(--danger-bg)' : 'var(--success-bg)',
+          color: message.includes('Error') ? 'var(--danger-text)' : 'var(--success-text)',
           fontSize: 13
         }}>
           {message}

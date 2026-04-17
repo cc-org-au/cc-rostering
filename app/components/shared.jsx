@@ -1,4 +1,5 @@
 "use client";
+import { forwardRef } from "react";
 // ── Shared UI primitives ──────────────────────────────────────────────────────
 export const DAYS_SHORT  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 export const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -111,16 +112,51 @@ export function Overlay({onClose,children}) {
   return <div onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{position:"fixed",inset:0,background:"var(--overlay-scrim)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,overflowY:"auto",padding:"32px 12px 48px"}}>{children}</div>;
 }
 export function ModalBox({children,maxWidth=700}) {
-  return <div style={{background:"var(--bg-card)",borderRadius:16,padding:24,width:`min(${maxWidth}px,100%)`,boxShadow:"var(--shadow-modal)"}}>{children}</div>;
+  return (
+    <div
+      style={{
+        background: "var(--bg-card)",
+        borderRadius: 16,
+        padding: 24,
+        width: `min(${maxWidth}px,100%)`,
+        maxHeight: "min(calc(100vh - 48px), 92vh)",
+        overflowY: "auto",
+        boxShadow: "var(--shadow-modal)",
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 export function Lbl({children}) { return <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:5}}>{children}</div>; }
 export function Row2({children}) { return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{children}</div>; }
-export function FocusInp({value,onChange,placeholder,type="text",style={},disabled=false}) {
-  return <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
-    style={inpSt({...style,...(disabled?{background:"var(--bg-input-disabled)",color:"var(--text-faint)"}:{})})}
-    onFocus={e=>{if(!disabled)e.target.style.borderColor="var(--focus-ring)";}}
-    onBlur={e=>e.target.style.borderColor="var(--border-input)"}/>;
-}
+export const FocusInp = forwardRef(function FocusInp(props, ref) {
+  const { value, onChange, placeholder, type = "text", style = {}, disabled = false, ...rest } = props;
+  const controlled = Object.prototype.hasOwnProperty.call(props, "value");
+  return (
+    <input
+      ref={ref}
+      type={type}
+      {...(controlled ? { value: value ?? "", onChange } : {})}
+      placeholder={placeholder}
+      disabled={disabled}
+      {...rest}
+      style={inpSt({
+        ...style,
+        ...(disabled ? { background: "var(--bg-input-disabled)", color: "var(--text-faint)" } : {}),
+      })}
+      onFocus={(e) => {
+        rest.onFocus?.(e);
+        if (!disabled) e.target.style.borderColor = "var(--focus-ring)";
+      }}
+      onBlur={(e) => {
+        rest.onBlur?.(e);
+        e.target.style.borderColor = "var(--border-input)";
+      }}
+    />
+  );
+});
+FocusInp.displayName = "FocusInp";
 export function FocusTxt({value,onChange,placeholder,rows=3}) {
   return <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
     style={inpSt({resize:"vertical"})}

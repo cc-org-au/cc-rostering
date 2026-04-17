@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  ROLES, STRENGTHS,
+  ROLES,
   cardSt, inpSt, selSt,
   BtnPri, Btn, BtnDanger,
   ConfirmModal,
@@ -14,8 +14,10 @@ import {
   exportRoster, exportEmployees, exportProjects, exportTimesheets, exportMonthlyBundle
 } from "../../lib/exportData";
 import {
-  validateEmployeesCSV, applyEmployeeImport, validateHolidayCSV,
-  downloadEmployeeTemplate, downloadHolidayTemplate, HOLIDAY_TEMPLATES
+  validateEmployeesCSV, applyEmployeeImport,
+  validateProjectsCSV, applyProjectImport,
+  validateHolidayCSV,
+  downloadEmployeeTemplate, downloadProjectTemplate, downloadHolidayTemplate, HOLIDAY_TEMPLATES
 } from "../../lib/importData";
 
 const CERT_NAMES = [
@@ -80,7 +82,7 @@ function OrganizationSection({ getSetting, setSetting, showToast, supabase }) {
       )}
       <div style={{display:"flex",gap:8,marginTop:16}}>
         <BtnPri onClick={save}>Save</BtnPri>
-        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+        {saved && <span style={{fontSize:13,color:"var(--success-text)",fontWeight:500}}>✓ Saved</span>}
       </div>
     </div>
   );
@@ -164,7 +166,7 @@ function BusinessRulesSection({ getSetting, setSetting, showToast }) {
                 borderRadius:6,
                 border:"1.5px solid",
                 borderColor: form.weekend_days.includes(idx) ? "var(--accent)" : "var(--border-input)",
-                background: form.weekend_days.includes(idx) ? "#eef2ff" : "#fff",
+                background: form.weekend_days.includes(idx) ? "var(--accent-soft)" : "var(--bg-card)",
                 color: form.weekend_days.includes(idx) ? "var(--accent)" : "var(--text-muted)",
                 fontSize:13,
                 fontWeight:500,
@@ -177,7 +179,7 @@ function BusinessRulesSection({ getSetting, setSetting, showToast }) {
       </div>
       <div style={{display:"flex",gap:8,marginTop:16}}>
         <BtnPri onClick={save}>Save</BtnPri>
-        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+        {saved && <span style={{fontSize:13,color:"var(--success-text)",fontWeight:500}}>✓ Saved</span>}
       </div>
     </div>
   );
@@ -248,7 +250,7 @@ function DefaultsSection({ getSetting, setSetting, showToast }) {
       </div>
       <div style={{display:"flex",gap:8,marginTop:16}}>
         <BtnPri onClick={save}>Save</BtnPri>
-        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+        {saved && <span style={{fontSize:13,color:"var(--success-text)",fontWeight:500}}>✓ Saved</span>}
       </div>
     </div>
   );
@@ -384,7 +386,7 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
           <span style={{color:"var(--text-muted)"}}>Quick load:</span>
           {Object.keys(HOLIDAY_TEMPLATES).map(country => (
             <button key={country} type="button" onClick={()=>loadTemplate(country)}
-              style={{padding:"4px 10px",background:"var(--bg-muted)",border:"1px solid #e5e7eb",borderRadius:4,cursor:"pointer",fontSize:12,color:"var(--text-secondary)"}}>
+              style={{padding:"4px 10px",background:"var(--bg-muted)",border:"1px solid var(--border)",borderRadius:4,cursor:"pointer",fontSize:12,color:"var(--text-secondary)"}}>
               {country}
             </button>
           ))}
@@ -393,7 +395,7 @@ function CalendarSection({ getSetting, setSetting, showToast }) {
 
       <div style={{display:"flex",gap:8,marginTop:16}}>
         <BtnPri onClick={save}>Save</BtnPri>
-        {saved && <span style={{fontSize:13,color:"#059669",fontWeight:500}}>✓ Saved</span>}
+        {saved && <span style={{fontSize:13,color:"var(--success-text)",fontWeight:500}}>✓ Saved</span>}
       </div>
 
       <ConfirmModal
@@ -494,7 +496,7 @@ function ExportSection({ employees, projects, assignments, year, month, showToas
 }
 
 // ── Import Section ─────────────────────────────────────────────────────────
-function ImportSection({ employees, setEmployees, showToast, supabase }) {
+function ImportSection({ employees, projects, refreshProjects, showToast, supabase }) {
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importType, setImportType] = useState('employees');
@@ -510,8 +512,11 @@ function ImportSection({ employees, setEmployees, showToast, supabase }) {
     setImportFile(text);
 
     if (importType === 'employees') {
-      const result = validateEmployeesCSV(text, employees);
-      setPreview(result);
+      setPreview(validateEmployeesCSV(text, employees));
+    } else if (importType === 'projects') {
+      setPreview(validateProjectsCSV(text, projects));
+    } else {
+      setPreview(validateHolidayCSV(text));
     }
   }
 
@@ -519,15 +524,31 @@ function ImportSection({ employees, setEmployees, showToast, supabase }) {
     if (!preview) return;
     setImporting(true);
     try {
-      const result = await applyEmployeeImport(preview.valid, preview.duplicates, supabase, action);
-      if (result.imported > 0) {
-        showToast(`✓ Imported ${result.imported} employees`);
-        if (result.skipped > 0) showToast(`⚠ Skipped ${result.skipped} duplicates`);
+      if (importType === 'employees') {
+        const result = await applyEmployeeImport(preview.valid, preview.duplicates, supabase, action);
+        if (result.imported > 0) {
+          showToast(`✓ Imported ${result.imported} employees`);
+          if (result.skipped > 0) showToast(`⚠ Skipped ${result.skipped} duplicates`);
+        } else {
+          showToast("No employees imported");
+        }
+        if (result.errors.length > 0) {
+          showToast(`✗ ${result.errors[0]}`);
+        }
+      } else if (importType === 'projects') {
+        const result = await applyProjectImport(preview.valid, preview.duplicates, supabase, action);
+        if (result.imported > 0) {
+          showToast(`✓ Imported or updated ${result.imported} projects`);
+          if (result.skipped > 0) showToast(`⚠ Skipped ${result.skipped} existing (use Overwrite to replace)`);
+        } else {
+          showToast("No projects imported");
+        }
+        if (result.errors.length > 0) {
+          showToast(`✗ ${result.errors[0]}`);
+        }
+        await refreshProjects?.();
       } else {
-        showToast("No employees imported");
-      }
-      if (result.errors.length > 0) {
-        showToast(`✗ ${result.errors[0]}`);
+        showToast("Holiday import is not applied to the database yet — use the template to validate dates only.");
       }
       setShowImport(false);
       setPreview(null);
@@ -546,11 +567,13 @@ function ImportSection({ employees, setEmployees, showToast, supabase }) {
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
         <select value={importType} onChange={e=>setImportType(e.target.value)} style={selSt({fontSize:13})}>
           <option value="employees">Import Employees</option>
+          <option value="projects">Import Projects (sites / clients)</option>
           <option value="holidays">Import Holidays</option>
         </select>
         <BtnPri onClick={()=>setShowImport(true)} style={{fontSize:13}}>Choose file…</BtnPri>
         <Btn onClick={()=>{
           if (importType === 'employees') downloadEmployeeTemplate();
+          else if (importType === 'projects') downloadProjectTemplate();
           else downloadHolidayTemplate();
         }} style={{fontSize:13}}>📋 Template</Btn>
       </div>
@@ -564,11 +587,11 @@ function ImportSection({ employees, setEmployees, showToast, supabase }) {
 
             {preview && (
               <div style={{marginBottom:16}}>
-                <Alert type={preview.errors.length === 0 ? 'info' : 'error'}>
-                  Valid: {preview.summary.valid} | Errors: {preview.summary.errors} | Duplicates: {preview.summary.duplicates}
+                <Alert type={preview.errors?.length === 0 ? 'info' : 'error'}>
+                  Valid: {preview.summary?.valid} | Errors: {preview.summary?.errors} | Duplicates: {preview.summary?.duplicates ?? 0}
                 </Alert>
 
-                {preview.valid.length > 0 && (
+                {preview.valid?.length > 0 && importType !== 'holidays' && (
                   <div style={{marginTop:12}}>
                     <Lbl>Duplicate handling</Lbl>
                     <select value={action} onChange={e=>setAction(e.target.value)} style={selSt({fontSize:13})}>
@@ -578,20 +601,20 @@ function ImportSection({ employees, setEmployees, showToast, supabase }) {
                   </div>
                 )}
 
-                {preview.errors.length > 0 && (
-                  <div style={{maxHeight:150,overflowY:"auto",marginTop:12,padding:10,background:"#fee2e2",borderRadius:6}}>
+                {preview.errors?.length > 0 && (
+                  <div style={{maxHeight:150,overflowY:"auto",marginTop:12,padding:10,background:"var(--danger-bg)",borderRadius:6,border:"1px solid var(--danger-border)"}}>
                     {preview.errors.map((err, idx) => (
-                      <div key={idx} style={{fontSize:12,color:"#991b1b",marginBottom:6}}>
+                      <div key={idx} style={{fontSize:12,color:"var(--danger-text)",marginBottom:6}}>
                         Line {err.row}: {err.message}
                       </div>
                     ))}
                   </div>
                 )}
 
-                {preview.duplicates.length > 0 && (
-                  <div style={{maxHeight:100,overflowY:"auto",marginTop:12,padding:10,background:"#fffbeb",borderRadius:6}}>
+                {preview.duplicates?.length > 0 && (
+                  <div style={{maxHeight:100,overflowY:"auto",marginTop:12,padding:10,background:"var(--surface-warn)",borderRadius:6,border:"1px solid var(--surface-warn-border)"}}>
                     {preview.duplicates.map((dup, idx) => (
-                      <div key={idx} style={{fontSize:12,color:"#92400e"}}>
+                      <div key={idx} style={{fontSize:12,color:"var(--surface-warn-text)"}}>
                         {dup.name} (line {dup.row})
                       </div>
                     ))}
@@ -647,9 +670,9 @@ function CertificationsSection({ employees, certifications, setCertifications, s
   function expiryStatus(d) {
     if (!d) return null;
     const diff = Math.floor((new Date(d) - new Date()) / 86400000);
-    if (diff < 0) return { label:"Expired", col:"#dc2626", bg:"#fee2e2" };
-    if (diff < 30) return { label:`Expires in ${diff}d`, col:"#d97706", bg:"#fffbeb" };
-    return { label:`Expires ${d}`, col:"#059669", bg:"#f0fdf4" };
+    if (diff < 0) return { label:"Expired", col:"var(--danger-text)", bg:"var(--danger-bg)" };
+    if (diff < 30) return { label:`Expires in ${diff}d`, col:"var(--surface-warn-text)", bg:"var(--surface-warn)" };
+    return { label:`Expires ${d}`, col:"var(--success-text)", bg:"var(--success-bg)" };
   }
 
   return (
@@ -745,6 +768,7 @@ export default function SettingsTab({
   userProfiles, setUserProfiles,
   assignments,
   projects,
+  refreshProjects,
   showToast,
   supabase,
   year, month,
@@ -771,7 +795,7 @@ export default function SettingsTab({
           width:"100%",
           padding:"14px 16px",
           background:"var(--bg-muted)",
-          border:"1px solid #e5e7eb",
+          border:"1px solid var(--border)",
           borderRadius:8,
           display:"flex",
           justifyContent:"space-between",
@@ -817,7 +841,13 @@ export default function SettingsTab({
       </CollapsibleSection>
 
       <CollapsibleSection title="Import Data" icon="📤" sectionKey="import">
-        <ImportSection employees={employees} setEmployees={setEmployees} showToast={showToast} supabase={supabase}/>
+        <ImportSection
+          employees={employees}
+          projects={projects}
+          refreshProjects={refreshProjects}
+          showToast={showToast}
+          supabase={supabase}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection title="Certifications" icon="🎓" sectionKey="certifications">

@@ -1,10 +1,11 @@
 "use client";
 import AuthScreen from "./components/AuthScreen";
 import RosterApp from "./RosterApp";
-import { AuthProvider, useAuthProvider } from "../lib/useAuth";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
+import { AuthProvider, useAuth } from "../lib/useAuth";
 
 function PageContent() {
-  const auth = useAuthProvider();
+  const auth = useAuth();
 
   // Show loading state while auth is initializing
   if (auth.loading) {
@@ -34,8 +35,10 @@ function PageContent() {
 
 export default function Page() {
   return (
-    <AuthProvider>
-      <PageContent />
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <PageContent />
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }

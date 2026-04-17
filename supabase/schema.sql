@@ -28,6 +28,41 @@ create table if not exists auth_audit_logs (
 alter table app_users enable row level security;
 alter table auth_audit_logs enable row level security;
 
+-- RLS-safe role checks (avoids infinite recursion on app_users)
+-- Helpers must SET row_security = off: SECURITY DEFINER still applies RLS as the invoker otherwise (infinite recursion).
+create or replace function public.is_app_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+set row_security = off
+as $$
+  select coalesce((select (role = 'admin') from public.app_users where id = auth.uid() limit 1), false);
+$$;
+
+create or replace function public.app_user_role_in(_roles text[])
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+set row_security = off
+as $$
+  select coalesce((select role = any(_roles) from public.app_users where id = auth.uid() limit 1), false);
+$$;
+
+create or replace function public.app_user_id_text()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+set row_security = off
+as $$
+  select id::text from public.app_users where id = auth.uid() limit 1;
+$$;
+
 -- Users can view their own profile
 create policy "users_view_own" on app_users for select
   using (auth.uid() = id);
@@ -39,12 +74,12 @@ create policy "users_update_own" on app_users for update
 
 -- Admins can view all users
 create policy "admins_view_all_users" on app_users for select
-  using ((select role from app_users where id = auth.uid()) = 'admin');
+  using (public.is_app_admin());
 
 -- Admins can update any user
 create policy "admins_update_all_users" on app_users for update
-  using ((select role from app_users where id = auth.uid()) = 'admin')
-  with check ((select role from app_users where id = auth.uid()) = 'admin');
+  using (public.is_app_admin())
+  with check (public.is_app_admin());
 
 -- Users can view their own audit logs
 create policy "users_view_own_audit" on auth_audit_logs for select
@@ -52,7 +87,7 @@ create policy "users_view_own_audit" on auth_audit_logs for select
 
 -- Admins can view all audit logs
 create policy "admins_view_all_audit" on auth_audit_logs for select
-  using ((select role from app_users where id = auth.uid()) = 'admin');
+  using (public.is_app_admin());
 
 -- ── ROSTERING TABLES ───────────────────────────────────────────────────────────
 
@@ -77,6 +112,8 @@ create table if not exists projects (
   is_completed        boolean not null default false,
   status              text not null default 'active',
   budget_total        numeric default 0,
+  work_days           jsonb not null default '{"Mon":true,"Tue":true,"Wed":true,"Thu":true,"Fri":true,"Sat":false,"Sun":false}',
+  overtime_note       text not null default '',
   created_at          timestamptz not null default now()
 );
 
@@ -298,7 +335,7 @@ alter table revenue_logs enable row level security;
 -- Employees see own revenue, managers see team, admins see all
 create policy "revenue_logs_view" on revenue_logs for select
   using (
-    (select role from app_users where id = auth.uid()) = 'admin'
+    public.is_app_admin()
     or employee_id = (select id from app_users where id = auth.uid())
   );
 
@@ -448,20 +485,20 @@ create policy "users_update_own_notifications" on notifications for update
 
 -- Admins can view all alerts config
 create policy "admins_view_alerts_config" on alerts_config for select
-  using ((select role from app_users where id = auth.uid()) in ('admin', 'manager'));
+  using (public.app_user_role_in(array['admin', 'manager']));
 
 -- Admins can update alerts config
 create policy "admins_update_alerts_config" on alerts_config for update
-  using ((select role from app_users where id = auth.uid()) = 'admin')
-  with check ((select role from app_users where id = auth.uid()) = 'admin');
+  using (public.is_app_admin())
+  with check (public.is_app_admin());
 
 -- Admins can view notification logs
 create policy "admins_view_notification_logs" on notification_logs for select
-  using ((select role from app_users where id = auth.uid()) in ('admin', 'manager'));
+  using (public.app_user_role_in(array['admin', 'manager']));
 
 -- Admins can view alert audit log
 create policy "admins_view_alert_audit" on alert_audit_log for select
-  using ((select role from app_users where id = auth.uid()) in ('admin', 'manager'));
+  using (public.app_user_role_in(array['admin', 'manager']));
 
 -- Indices for performance
 create index if not exists idx_notifications_user_created 

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useMemo, useCallback } from "react";
+import { monthlyTargetHoursCapped } from "../../lib/rosterAlloc.js";
 import {
   DAYS_SHORT, MONTHS, HPD,
-  daysInMo, dowOf, dlabel, isWknd, pmKey,
+  daysInMo, dowOf, dlabel, isWknd,
   fmtH, fmt$,
   cardSt, inpSt, selSt,
   BtnPri, Btn, BtnDanger,
@@ -12,9 +13,6 @@ import {
 } from "./shared";
 
 const YEARS = Array.from({length:6},(_,i)=>new Date().getFullYear()-1+i);
-
-function wdInMonth(y,m){let c=0;for(let d=1;d<=daysInMo(y,m);d++)if(!isWknd(y,m,d))c++;return c;}
-function monthAllocH(p,y,m){const v=p.monthlyHours?.[pmKey(y,m)];return v!==undefined?v:wdInMonth(y,m)*HPD;}
 
 function projColor(projects,id){return projects.find(p=>p.id===id)?.color||"#888";}
 function projNameOf(projects,id){return projects.find(p=>p.id===id)?.name||"";}
@@ -220,11 +218,11 @@ function CoverageView({ projects, employees, assigns, rYear, rMonth, calDays, on
                   const needed = fixed || 0;
                   const ok = fixed === null ? count > 0 : count >= fixed;
                   const empty = count === 0;
-                  const bg = empty ? "#fee2e2" : ok ? `${p.color}20` : "#fffbeb";
+                  const bg = empty ? "rgba(254,202,202,0.35)" : ok ? `${p.color}20` : "var(--surface-warn)";
                   const col = empty ? "#dc2626" : ok ? p.color : "#d97706";
                   return (
                     <td key={d} onClick={() => onDayClick(d)}
-                      style={{padding:"4px 2px",textAlign:"center",background:bg,cursor:"pointer",borderLeft:"1px solid #f3f4f6",borderRadius:4}}>
+                      style={{padding:"4px 2px",textAlign:"center",background:bg,cursor:"pointer",borderLeft:"1px solid var(--border-soft)",borderRadius:4}}>
                       <span style={{fontSize:12,fontWeight:600,color:col}}>{count || "–"}</span>
                       {fixed && count < fixed && count > 0 && <span style={{fontSize:9,color:"#d97706",display:"block"}}>-{fixed-count}</span>}
                     </td>
@@ -239,7 +237,7 @@ function CoverageView({ projects, employees, assigns, rYear, rMonth, calDays, on
             );
           })}
           {/* Unassigned row */}
-          <tr style={{borderBottom:"1px solid #f3f4f6",background:"var(--bg-surface)"}}>
+          <tr style={{borderBottom:"1px solid var(--border-soft)",background:"var(--bg-surface)"}}>
             <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-muted)",fontSize:13,position:"sticky",left:0,background:"var(--bg-surface)",zIndex:1}}>Unassigned</td>
             {weekdays.map(d => {
               const unassigned = employees.filter(e => {
@@ -248,7 +246,7 @@ function CoverageView({ projects, employees, assigns, rYear, rMonth, calDays, on
               }).length;
               return (
                 <td key={d} onClick={() => onDayClick(d)}
-                  style={{padding:"4px 2px",textAlign:"center",background:unassigned>0?"#fffbeb":"#f0fdf4",cursor:"pointer",borderLeft:"1px solid #f3f4f6"}}>
+                  style={{padding:"4px 2px",textAlign:"center",background:unassigned>0?"var(--surface-warn)":"var(--surface-ok)",cursor:"pointer",borderLeft:"1px solid var(--border-soft)"}}>
                   <span style={{fontSize:12,fontWeight:600,color:unassigned>0?"#d97706":"#059669"}}>{unassigned||"✓"}</span>
                 </td>
               );
@@ -349,10 +347,10 @@ export default function RosterTab({
         <YearSel  val={rYear}  set={setRYear}/>
         <BtnPri onClick={autoGenerate}>Auto-generate</BtnPri>
         <Btn onClick={clearMonth}>Clear month</Btn>
-        <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid #d1d5db",borderRadius:8,overflow:"hidden"}}>
+        <div style={{marginLeft:"auto",display:"flex",border:"1.5px solid var(--border-input)",borderRadius:8,overflow:"hidden"}}>
           {[["calendar","Calendar"],["employees","By employee"],["coverage","Coverage"]].map(([v,label])=>(
             <button key={v} type="button" onClick={()=>setRView(v)}
-              style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"var(--accent)":"#fff",color:rosterView===v?"#fff":"var(--text-secondary)",whiteSpace:"nowrap"}}>
+              style={{padding:"8px 14px",border:"none",fontFamily:"inherit",fontSize:13,fontWeight:500,cursor:"pointer",background:rosterView===v?"var(--accent)":"var(--surface-cell)",color:rosterView===v?"var(--on-accent)":"var(--text-secondary)",whiteSpace:"nowrap"}}>
               {label}
             </button>
           ))}
@@ -362,14 +360,14 @@ export default function RosterTab({
       {/* Violations panel */}
       {vCount > 0 && (
         <div style={{marginBottom:14}}>
-          <button onClick={()=>setShowV(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:8,background:"#fffbeb",border:"1.5px solid #fde68a",color:"#92400e",fontSize:13,fontWeight:600,cursor:"pointer",width:"100%",textAlign:"left",fontFamily:"inherit"}}>
+          <button onClick={()=>setShowV(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:8,background:"var(--surface-warn)",border:"1.5px solid var(--surface-warn-border)",color:"var(--surface-warn-text)",fontSize:13,fontWeight:600,cursor:"pointer",width:"100%",textAlign:"left",fontFamily:"inherit"}}>
             <span>⚠ {vCount} compliance issue{vCount>1?"s":""} detected</span>
             <span style={{marginLeft:"auto",fontSize:11}}>{showViolations?"▲ Hide":"▼ Show"}</span>
           </button>
           {showViolations && (
-            <div style={{border:"1.5px solid #fde68a",borderTop:"none",borderRadius:"0 0 8px 8px",padding:12,background:"#fffdf0"}}>
+            <div style={{border:"1.5px solid var(--surface-warn-border)",borderTop:"none",borderRadius:"0 0 8px 8px",padding:12,background:"var(--surface-warn-panel)"}}>
               {violations.map((v,i) => (
-                <div key={i} style={{fontSize:13,color:"#78350f",padding:"4px 0",borderBottom:i<violations.length-1?"1px solid #fde68a":"",...{display:"flex",gap:8,alignItems:"center"}}}>
+                <div key={i} style={{fontSize:13,color:"var(--surface-warn-text)",padding:"4px 0",borderBottom:i<violations.length-1?"1px solid var(--surface-warn-border)":"",...{display:"flex",gap:8,alignItems:"center"}}}>
                   <span style={{fontSize:16}}>{v.type==='pto_conflict'?"🏖":v.type==='avail'?"📅":"⏰"}</span>
                   {v.type==='overtime_week' && <span><b>{v.emp.name}</b> — Week {v.week}: {v.hours}h scheduled (overtime threshold: {v.threshold}h)</span>}
                   {v.type==='exceed_week'   && <span><b>{v.emp.name}</b> — Week {v.week}: {v.hours}h scheduled exceeds max {v.threshold}h</span>}
@@ -386,7 +384,7 @@ export default function RosterTab({
       {projects.length > 0 && (
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
           {projects.map(p => {
-            const target = monthAllocH(p, rYear, rMonth);
+            const target = monthlyTargetHoursCapped(p, rYear, rMonth);
             const actual = projManH(p.id);
             const pct = target > 0 ? Math.round(actual/target*100) : 0;
             const display = p.totalUnit==="hours" ? `${fmtH(actual)}/${fmtH(target)}` : `${Math.round(actual/HPD)}d/${Math.round(target/HPD)}d`;
@@ -401,7 +399,7 @@ export default function RosterTab({
       )}
 
       {(projects.length === 0 || employees.length === 0) && (
-        <div style={{textAlign:"center",padding:32,border:"2px dashed #e5e7eb",borderRadius:12,color:"var(--text-faint)",fontSize:14}}>
+        <div style={{textAlign:"center",padding:32,border:"2px dashed var(--border)",borderRadius:12,color:"var(--text-faint)",fontSize:14}}>
           Add projects and employees first to start building the roster.
         </div>
       )}
@@ -430,10 +428,10 @@ export default function RosterTab({
                     onDrop={ev => handleDrop(day, ev)}
                     onMouseEnter={e=>{if(!wknd){e.currentTarget.style.borderColor="#a5b4fc";e.currentTarget.style.boxShadow="0 0 0 3px #eef2ff";}}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor=isDragOver?"#6366f1":"var(--border)";e.currentTarget.style.boxShadow="none";}}
-                    style={{border:`1.5px solid ${isDragOver?"#6366f1":"var(--border)"}`,borderRadius:10,padding:"6px 7px",minHeight:72,background:wknd?"var(--bg-muted)":isDragOver?"#eef2ff":"#fff",cursor:wknd?"default":"pointer",transition:"border-color 0.12s,box-shadow 0.12s,background 0.12s"}}>
+                    style={{border:`1.5px solid ${isDragOver?"#6366f1":"var(--border)"}`,borderRadius:10,padding:"6px 7px",minHeight:72,background:wknd?"var(--bg-muted)":isDragOver?"var(--surface-drag)":"var(--surface-cell)",cursor:wknd?"default":"pointer",transition:"border-color 0.12s,box-shadow 0.12s,background 0.12s"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                       <span style={{fontSize:12,fontWeight:600,color:wknd?"var(--text-faint)":"var(--text-secondary)"}}>{day}</span>
-                      {hasOpenShift && <span title={`${openShiftDays[day]} open shift(s)`} style={{fontSize:9,padding:"1px 5px",borderRadius:99,background:"#eff6ff",color:"#1d4ed8",fontWeight:700}}>+{openShiftDays[day]}</span>}
+                      {hasOpenShift && <span title={`${openShiftDays[day]} open shift(s)`} style={{fontSize:9,padding:"1px 5px",borderRadius:99,background:"var(--info-bg)",color:"var(--info-text-strong)",fontWeight:700}}>+{openShiftDays[day]}</span>}
                     </div>
                     {!wknd && Object.entries(byProj).map(([pid,count]) => (
                       <div key={pid} style={{display:"flex",alignItems:"center",gap:3,marginBottom:2}}>
@@ -476,8 +474,8 @@ export default function RosterTab({
                 const pct = e.maxHoursPerMonth > 0 ? Math.round(sch/e.maxHoursPerMonth*100) : 0;
                 const hasViol = violations.some(v => v.emp.id === e.id);
                 return (
-                  <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6",background:hasViol?"#fffbeb":"#fff"}}>
-                    <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-primary)",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:hasViol?"#fffbeb":"#fff",zIndex:1}}>
+                  <tr key={e.id} style={{borderBottom:"1px solid var(--border-soft)",background:hasViol?"var(--surface-warn)":"var(--surface-cell)"}}>
+                    <td style={{padding:"8px 12px",fontWeight:500,color:"var(--text-primary)",fontSize:13,whiteSpace:"nowrap",position:"sticky",left:0,background:hasViol?"var(--surface-warn)":"var(--surface-cell)",zIndex:1}}>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                         {hasViol && <span title="Compliance issue">⚠</span>}
                         <div>
@@ -501,7 +499,7 @@ export default function RosterTab({
                           onDrop={ev => handleDrop(d, ev)}
                           onClick={() => { if (!wknd) setDayEd(d); }}
                           title={pid ? `${e.name} → ${projNameOf(projects,pid)}` : isPTO ? "Approved leave" : undefined}
-                          style={{padding:"3px 1px",textAlign:"center",background:wknd?"var(--bg-muted)":isPTO?"#ede9fe":pid?projColor(projects,pid)+"28":"#fff",cursor:wknd?"default":"pointer",borderLeft:"1px solid #f3f4f6"}}>
+                          style={{padding:"3px 1px",textAlign:"center",background:wknd?"var(--bg-muted)":isPTO?"var(--accent-soft)":pid?projColor(projects,pid)+"28":"var(--surface-cell)",cursor:wknd?"default":"pointer",borderLeft:"1px solid var(--border-soft)"}}>
                           {pid && <span style={{display:"block",width:10,height:10,borderRadius:"50%",background:projColor(projects,pid),margin:"0 auto"}}/>}
                           {isPTO && !pid && <span style={{color:"#7c3aed",fontSize:9}}>PTO</span>}
                           {!pid && !wknd && !avail && !isPTO && <span style={{color:"var(--border)",fontSize:9}}>–</span>}

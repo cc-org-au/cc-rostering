@@ -1,5 +1,4 @@
 -- Leave/PTO Management System for Roster Manager
--- Run this in the Supabase SQL editor: https://supabase.com/dashboard/project/macarnrvvxkmqrpdjyja/sql
 
 -- ── LEAVE TYPES ─────────────────────────────────────────────────────────────
 create table if not exists leave_types (
@@ -89,26 +88,20 @@ create policy "leave_types_read" on leave_types for select using (true);
 create policy "leave_types_manage" on leave_types for all using (true) with check (true);
 
 -- leave_balances: employees see own, managers/admins see all
-create policy "leave_balances_employee_view" on leave_balances for select
-  using (true);
-create policy "leave_balances_manage" on leave_balances for all
-  using (true) with check (true);
+create policy "leave_balances_employee_view" on leave_balances for select using (true);
+create policy "leave_balances_manage" on leave_balances for all using (true) with check (true);
 
 -- leave_requests: employees see own, managers see team, admins see all
-create policy "leave_requests_employee_view" on leave_requests for select
-  using (true);
-create policy "leave_requests_create" on leave_requests for insert
-  with check (true);
-create policy "leave_requests_manage" on leave_requests for update
-  using (true) with check (true);
-create policy "leave_requests_delete" on leave_requests for delete
-  using (true);
+create policy "leave_requests_employee_view" on leave_requests for select using (true);
+create policy "leave_requests_create" on leave_requests for insert with check (true);
+create policy "leave_requests_manage" on leave_requests for update using (true) with check (true);
+create policy "leave_requests_delete" on leave_requests for delete using (true);
 
--- leave_accrual_log: audit only (admins and system can write)
+-- leave_accrual_log: audit only
 create policy "leave_accrual_read" on leave_accrual_log for select using (true);
 create policy "leave_accrual_write" on leave_accrual_log for all using (true) with check (true);
 
--- leave_audit_log: audit only (admins and system can write)
+-- leave_audit_log: audit only
 create policy "leave_audit_read" on leave_audit_log for select using (true);
 create policy "leave_audit_write" on leave_audit_log for all using (true) with check (true);
 
@@ -122,4 +115,4 @@ insert into leave_types (id, name, color, paid, days_per_year, requires_approval
   ('leave-jury', 'Jury Duty', '#14b8a6', true, 0, false, false, 0, 6, true),
   ('leave-public', 'Public Holiday', '#f59e0b', true, 0, false, false, 0, 7, true),
   ('leave-compassionate', 'Compassionate Leave', '#06b6d4', true, 0, true, false, 0, 8, true)
-on conflict (name) do nothing;
+on conflict (name) do nothing;;

@@ -289,8 +289,8 @@ export default function ReportsTab({
 
   // ── Helpers for variance cell colour ──────────────────────────────────────
   function varianceCellStyle(variance) {
-    if (variance < -4) return { color: "#dc2626", fontWeight: 600 };
-    if (variance >= -4) return { color: "#059669", fontWeight: 600 };
+    if (variance < -4) return { color: "var(--danger-text)", fontWeight: 600 };
+    if (variance >= -4) return { color: "var(--success-text)", fontWeight: 600 };
     return {};
   }
 
@@ -409,9 +409,9 @@ export default function ReportsTab({
               onClick={() => setReportType(rt.id)}
               style={{
                 padding: "8px 14px",
-                background: reportType === rt.id ? "var(--accent)" : "#fff",
-                color: reportType === rt.id ? "#fff" : "var(--text-secondary)",
-                border: reportType === rt.id ? "2px solid #4f46e5" : "1.5px solid #d1d5db",
+                background: reportType === rt.id ? "var(--accent)" : "var(--surface-cell)",
+                color: reportType === rt.id ? "var(--on-accent)" : "var(--text-secondary)",
+                border: reportType === rt.id ? "2px solid var(--accent)" : "1.5px solid var(--border-input)",
                 borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 500,
@@ -471,12 +471,12 @@ export default function ReportsTab({
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Project Profitability</div>
             {financialData.prof && financialData.prof.length > 0 ? (
-              <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
+              <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid var(--border)" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "var(--bg-muted)" }}>
                       {["Project", "Client", "Revenue", "Cost", "Margin", "Margin %"].map(h => (
-                        <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
+                        <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid var(--border)" }}>
                           {h}
                         </th>
                       ))}
@@ -484,13 +484,13 @@ export default function ReportsTab({
                   </thead>
                   <tbody>
                     {financialData.prof.map(p => (
-                      <tr key={p.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <tr key={p.id} style={{ borderBottom: "1px solid var(--border-soft)" }}>
                         <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--text-primary)" }}>{p.name}</td>
                         <td style={{ padding: "10px 14px", color: "var(--text-muted)" }}>{p.client || "-"}</td>
-                        <td style={{ padding: "10px 14px", color: "#059669", fontWeight: 500 }}>{fmt$(p.revenue)}</td>
-                        <td style={{ padding: "10px 14px", color: "#dc2626" }}>{fmt$(p.actual_cost)}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 500, color: p.margin >= 0 ? "#059669" : "#dc2626" }}>{fmt$(p.margin)}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 600, color: p.margin_pct >= 30 ? "#059669" : p.margin_pct >= 15 ? "#d97706" : "#dc2626" }}>
+                        <td style={{ padding: "10px 14px", color: "var(--success-text)", fontWeight: 500 }}>{fmt$(p.revenue)}</td>
+                        <td style={{ padding: "10px 14px", color: "var(--danger-text)" }}>{fmt$(p.actual_cost)}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 500, color: p.margin >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>{fmt$(p.margin)}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 600, color: p.margin_pct >= 30 ? "var(--success-text)" : p.margin_pct >= 15 ? "var(--surface-warn-text)" : "var(--danger-text)" }}>
                           {p.margin_pct}%
                         </td>
                       </tr>
@@ -518,7 +518,7 @@ export default function ReportsTab({
               <SecTitle>Billable vs Non-Billable Hours</SecTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: "#059669" }}>{utilizationData.billable.billable_pct}%</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: "var(--success-text)" }}>{utilizationData.billable.billable_pct}%</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Billable: {fmtH(utilizationData.billable.billable_hours)}</div>
                 </div>
                 <div>
@@ -527,7 +527,7 @@ export default function ReportsTab({
                 </div>
               </div>
               <div style={{ marginTop: 12 }}>
-                <ProgBar pct={utilizationData.billable.billable_pct} color="#059669" />
+                <ProgBar pct={utilizationData.billable.billable_pct} color="var(--success-text)" />
               </div>
             </div>
           )}
@@ -535,11 +535,11 @@ export default function ReportsTab({
           {/* Over/underutilized */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 24 }}>
             {utilizationData.overalloc && utilizationData.overalloc.length > 0 && (
-              <div style={cardSt({ background: "#fef2f2", borderColor: "#fecaca" })}>
+              <div style={cardSt({ background: "var(--danger-bg)", borderColor: "var(--danger-border)" })}>
                 <SecTitle>⚠️ Overallocated Employees</SecTitle>
                 {utilizationData.overalloc.map(e => (
-                  <div key={e.id} style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid #fee2e2" }}>
-                    <div style={{ fontWeight: 500, color: "#dc2626" }}>{e.name} — {e.utilization_pct}%</div>
+                  <div key={e.id} style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid var(--danger-border)" }}>
+                    <div style={{ fontWeight: 500, color: "var(--danger-text)" }}>{e.name} — {e.utilization_pct}%</div>
                     <div style={{ fontSize: 11, color: "var(--text-faint)" }}>+{fmtH(e.overallocated_hours)} over limit</div>
                   </div>
                 ))}
@@ -547,11 +547,11 @@ export default function ReportsTab({
             )}
 
             {utilizationData.underutil && utilizationData.underutil.length > 0 && (
-              <div style={cardSt({ background: "#eff6ff", borderColor: "#bfdbfe" })}>
+              <div style={cardSt({ background: "var(--info-bg)", borderColor: "var(--info-border)" })}>
                 <SecTitle>📈 Underutilized Employees</SecTitle>
                 {utilizationData.underutil.slice(0, 5).map(e => (
-                  <div key={e.id} style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid #e0f2fe" }}>
-                    <div style={{ fontWeight: 500, color: "#0c63e4" }}>{e.name} — {e.utilization_pct}%</div>
+                  <div key={e.id} style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid var(--info-border)" }}>
+                    <div style={{ fontWeight: 500, color: "var(--info-text-strong)" }}>{e.name} — {e.utilization_pct}%</div>
                     <div style={{ fontSize: 11, color: "var(--text-faint)" }}>{fmtH(e.available_capacity)} available</div>
                   </div>
                 ))}
@@ -563,12 +563,12 @@ export default function ReportsTab({
           {utilizationData.empUtil && utilizationData.empUtil.length > 0 && (
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Employee Utilization</div>
-              <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
+              <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid var(--border)" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "var(--bg-muted)" }}>
                       {["Name", "Role", "Assigned", "Available", "Utilization", "Status"].map(h => (
-                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid #e5e7eb" }}>
+                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid var(--border)" }}>
                           {h}
                         </th>
                       ))}
@@ -576,16 +576,16 @@ export default function ReportsTab({
                   </thead>
                   <tbody>
                     {utilizationData.empUtil.map(e => (
-                      <tr key={e.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <tr key={e.id} style={{ borderBottom: "1px solid var(--border-soft)" }}>
                         <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--text-primary)" }}>{e.name}</td>
                         <td style={{ padding: "10px 12px", color: "var(--text-muted)", fontSize: 11 }}>{e.role}</td>
                         <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{fmtH(e.assigned_hours)}</td>
                         <td style={{ padding: "10px 12px", color: "var(--text-faint)" }}>{fmtH(e.available_hours)}</td>
-                        <td style={{ padding: "10px 12px", fontWeight: 600, color: e.utilization_pct >= 100 ? "#dc2626" : e.utilization_pct >= 80 ? "#d97706" : "#059669" }}>
+                        <td style={{ padding: "10px 12px", fontWeight: 600, color: e.utilization_pct >= 100 ? "var(--danger-text)" : e.utilization_pct >= 80 ? "var(--surface-warn-text)" : "var(--success-text)" }}>
                           {e.utilization_pct}%
                         </td>
                         <td style={{ padding: "10px 12px" }}>
-                          <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 500, background: e.status === "overallocated" ? "#fee2e2" : e.status === "healthy" ? "#dcfce7" : "#eff6ff", color: e.status === "overallocated" ? "#dc2626" : e.status === "healthy" ? "#166534" : "#1d4ed8" }}>
+                          <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 500, background: e.status === "overallocated" ? "var(--danger-bg)" : e.status === "healthy" ? "var(--str-active-bg)" : "var(--info-bg)", color: e.status === "overallocated" ? "var(--danger-text)" : e.status === "healthy" ? "var(--success-text)" : "var(--info-text-strong)" }}>
                             {e.status}
                           </span>
                         </td>
@@ -636,7 +636,7 @@ export default function ReportsTab({
                   <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)" }}>{fmtH(headcountData.capVsDemand.current_assigned)}</div>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: headcountData.capVsDemand.gap > 0 ? "#059669" : "#dc2626", fontWeight: 500, marginBottom: 8 }}>
+              <div style={{ fontSize: 13, color: headcountData.capVsDemand.gap > 0 ? "var(--success-text)" : "var(--danger-text)", fontWeight: 500, marginBottom: 8 }}>
                 {headcountData.capVsDemand.gap > 0 ? "✓ " : "✕ "}{fmtH(Math.abs(headcountData.capVsDemand.gap))} {headcountData.capVsDemand.gap > 0 ? "available" : "gap"}
               </div>
               <ProgBar pct={headcountData.capVsDemand.current_assigned > 0 ? (headcountData.capVsDemand.current_assigned / headcountData.capVsDemand.total_capacity) * 100 : 0} />
@@ -646,12 +646,12 @@ export default function ReportsTab({
           {headcountData.byRole && headcountData.byRole.length > 0 && (
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Headcount by Role</div>
-              <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
+              <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid var(--border)" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "var(--bg-muted)" }}>
                       {["Role", "Count", "Avg Rate", "Total Capacity"].map(h => (
-                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid #e5e7eb" }}>
+                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1.5px solid var(--border)" }}>
                           {h}
                         </th>
                       ))}
@@ -659,7 +659,7 @@ export default function ReportsTab({
                   </thead>
                   <tbody>
                     {headcountData.byRole.map(r => (
-                      <tr key={r.role} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <tr key={r.role} style={{ borderBottom: "1px solid var(--border-soft)" }}>
                         <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--text-primary)" }}>{r.role}</td>
                         <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{r.count}</td>
                         <td style={{ padding: "10px 12px", color: "var(--text-muted)" }}>${r.avg_rate}/hr</td>
@@ -684,8 +684,8 @@ export default function ReportsTab({
           {projectsData.health && projectsData.health.length > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12, marginBottom: 24 }}>
               {projectsData.health.filter(p => p.status !== "completed").map(p => {
-                const statusColor = p.status === "on-track" ? "#059669" : p.status === "finishing" ? "#d97706" : "#dc2626";
-                const statusBg = p.status === "on-track" ? "#f0fdf4" : p.status === "finishing" ? "#fffbeb" : "#fef2f2";
+                const statusColor = p.status === "on-track" ? "var(--success-text)" : p.status === "finishing" ? "var(--surface-warn-text)" : "var(--danger-text)";
+                const statusBg = p.status === "on-track" ? "var(--success-bg)" : p.status === "finishing" ? "var(--surface-warn)" : "var(--danger-bg)";
                 return (
                   <div key={p.id} style={cardSt({ background: statusBg, borderLeft: `4px solid ${statusColor}` })}>
                     <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>{p.name}</div>
@@ -716,15 +716,15 @@ export default function ReportsTab({
           </div>
 
           {complianceData.summary && (
-            <div style={cardSt({ marginBottom: 24, background: complianceData.summary.risk_level === "critical" ? "#fef2f2" : complianceData.summary.risk_level === "high" ? "#fffbeb" : "#f0fdf4", borderColor: complianceData.summary.risk_level === "critical" ? "#fecaca" : complianceData.summary.risk_level === "high" ? "#fcd34d" : "#bbf7d0" })}>
-              <SecTitle>Risk Level: <span style={{ textTransform: "uppercase", color: complianceData.summary.risk_level === "critical" ? "#dc2626" : complianceData.summary.risk_level === "high" ? "#d97706" : "#059669" }}>{complianceData.summary.risk_level}</span></SecTitle>
+            <div style={cardSt({ marginBottom: 24, background: complianceData.summary.risk_level === "critical" ? "var(--danger-bg)" : complianceData.summary.risk_level === "high" ? "var(--surface-warn)" : "var(--success-bg)", borderColor: complianceData.summary.risk_level === "critical" ? "var(--danger-border)" : complianceData.summary.risk_level === "high" ? "var(--surface-warn-border)" : "var(--success-border)" })}>
+              <SecTitle>Risk Level: <span style={{ textTransform: "uppercase", color: complianceData.summary.risk_level === "critical" ? "var(--danger-text)" : complianceData.summary.risk_level === "high" ? "var(--surface-warn-text)" : "var(--success-text)" }}>{complianceData.summary.risk_level}</span></SecTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}>{complianceData.summary.total_violations}</div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Total violations</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "#dc2626" }}>{complianceData.summary.critical_issues}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--danger-text)" }}>{complianceData.summary.critical_issues}</div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Critical issues</div>
                 </div>
               </div>
@@ -732,11 +732,11 @@ export default function ReportsTab({
           )}
 
           {complianceData.hoursViolations && complianceData.hoursViolations.length > 0 && (
-            <div style={cardSt({ background: "#fee2e2", borderColor: "#fecaca", marginBottom: 16 })}>
+            <div style={cardSt({ background: "var(--danger-bg)", borderColor: "var(--danger-border)", marginBottom: 16 })}>
               <SecTitle>⚠️ Hours Violations ({complianceData.hoursViolations.length})</SecTitle>
               {complianceData.hoursViolations.map(v => (
-                <div key={v.id} style={{ padding: "8px 0", fontSize: 12, borderBottom: "1px solid #fecaca" }}>
-                  <div style={{ fontWeight: 500, color: "#dc2626" }}>{v.name} — {v.hours_worked}h / {v.max_hours}h</div>
+                <div key={v.id} style={{ padding: "8px 0", fontSize: 12, borderBottom: "1px solid var(--danger-border)" }}>
+                  <div style={{ fontWeight: 500, color: "var(--danger-text)" }}>{v.name} — {v.hours_worked}h / {v.max_hours}h</div>
                   <div style={{ fontSize: 11, color: "var(--text-faint)" }}>+{v.violation_hours}h over ({v.violation_pct}%) • Severity: {v.severity}</div>
                 </div>
               ))}
@@ -744,11 +744,11 @@ export default function ReportsTab({
           )}
 
           {complianceData.skillMismatches && complianceData.skillMismatches.length > 0 && (
-            <div style={cardSt({ background: "#fffbeb", borderColor: "#fcd34d", marginBottom: 16 })}>
+            <div style={cardSt({ background: "var(--surface-warn)", borderColor: "var(--surface-warn-border)", marginBottom: 16 })}>
               <SecTitle>🔧 Skill Mismatches ({complianceData.skillMismatches.length})</SecTitle>
               {complianceData.skillMismatches.slice(0, 5).map((m, i) => (
-                <div key={i} style={{ padding: "8px 0", fontSize: 12, borderBottom: "1px solid #fcd34d" }}>
-                  <div style={{ fontWeight: 500, color: "#92400e" }}>{m.employee} → {m.project}</div>
+                <div key={i} style={{ padding: "8px 0", fontSize: 12, borderBottom: "1px solid var(--surface-warn-border)" }}>
+                  <div style={{ fontWeight: 500, color: "var(--surface-warn-text)" }}>{m.employee} → {m.project}</div>
                   <div style={{ fontSize: 11, color: "var(--text-faint)" }}>Missing: {m.missing_skills.join(", ")} ({m.coverage_pct}% coverage)</div>
                 </div>
               ))}
@@ -769,17 +769,17 @@ export default function ReportsTab({
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>Resource Gaps (3 months)</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {forecastsData.gaps.map(g => (
-                  <div key={`${g.year}-${g.month}`} style={cardSt({ background: g.risk_level === "critical" ? "#fee2e2" : g.risk_level === "high" ? "#fffbeb" : "var(--bg-muted)" })}>
+                  <div key={`${g.year}-${g.month}`} style={cardSt({ background: g.risk_level === "critical" ? "var(--danger-bg)" : g.risk_level === "high" ? "var(--surface-warn)" : "var(--bg-muted)" })}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
                       {MONTHS[g.month]} {g.year}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: g.gap_pct > 0 ? "#dc2626" : "#059669", marginBottom: 4 }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: g.gap_pct > 0 ? "var(--danger-text)" : "var(--success-text)", marginBottom: 4 }}>
                       {g.gap_pct}% gap
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
                       {fmtH(g.gap_hours)} hours needed
                     </div>
-                    <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 500, background: g.risk_level === "critical" ? "#fecaca" : g.risk_level === "high" ? "#fcd34d" : "#bbf7d0", color: g.risk_level === "critical" ? "#dc2626" : g.risk_level === "high" ? "#92400e" : "#166534" }}>
+                    <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 500, background: g.risk_level === "critical" ? "var(--danger-border)" : g.risk_level === "high" ? "var(--surface-warn-border)" : "var(--success-border)", color: g.risk_level === "critical" ? "var(--danger-text)" : g.risk_level === "high" ? "var(--surface-warn-text)" : "var(--success-text)" }}>
                       Risk: {g.risk_level}
                     </div>
                   </div>
@@ -792,7 +792,7 @@ export default function ReportsTab({
             <div style={cardSt()}>
               <SecTitle>📉 Attrition Risk (Top Concerns)</SecTitle>
               {forecastsData.attritionRisk.filter(a => a.risk_level !== "low").slice(0, 5).map(a => (
-                <div key={a.id} style={{ padding: "10px 0", fontSize: 12, borderBottom: "1px solid #e5e7eb" }}>
+                <div key={a.id} style={{ padding: "10px 0", fontSize: 12, borderBottom: "1px solid var(--border)" }}>
                   <div style={{ fontWeight: 500, color: "var(--text-primary)" }}>{a.name}</div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
                     Risk score: {a.risk_score} ({a.risk_level}) • {a.risk_factors.join(", ")}
@@ -840,12 +840,12 @@ export default function ReportsTab({
             </div>
 
             {/* Variance */}
-            <div style={cardSt({ marginBottom: 0, background: totalVariance < 0 ? "#fef2f2" : totalVariance > 0 ? "#f0fdf4" : "#fff", borderColor: totalVariance < 0 ? "#fecaca" : totalVariance > 0 ? "#bbf7d0" : "var(--border)" })}>
+            <div style={cardSt({ marginBottom: 0, background: totalVariance < 0 ? "var(--danger-bg)" : totalVariance > 0 ? "var(--success-bg)" : "var(--bg-card)", borderColor: totalVariance < 0 ? "var(--danger-border)" : totalVariance > 0 ? "var(--success-border)" : "var(--border)" })}>
               <SecTitle>Variance</SecTitle>
               <div style={{
                 fontSize: 28,
                 fontWeight: 700,
-                color: totalVariance < 0 ? "#dc2626" : totalVariance > 0 ? "#059669" : "var(--text-primary)",
+                color: totalVariance < 0 ? "var(--danger-text)" : totalVariance > 0 ? "var(--success-text)" : "var(--text-primary)",
               }}>
                 {totalVariance >= 0 ? "+" : ""}{fmtH(totalVariance)}
               </div>
@@ -855,7 +855,7 @@ export default function ReportsTab({
             {/* Utilisation */}
             <div style={cardSt({ marginBottom: 0 })}>
               <SecTitle>Utilisation</SecTitle>
-              <div style={{ fontSize: 28, fontWeight: 700, color: utilisation >= 100 ? "#dc2626" : utilisation >= 80 ? "#d97706" : "var(--text-primary)" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: utilisation >= 100 ? "var(--danger-text)" : utilisation >= 80 ? "var(--surface-warn-text)" : "var(--text-primary)" }}>
                 {utilisation}%
               </div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>of total capacity</div>
@@ -872,7 +872,7 @@ export default function ReportsTab({
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <SecTitle>Overtime alerts</SecTitle>
                 {overtimeAlerts.length > 0 && (
-                  <Tag bg="#fef3c7" col="#92400e">{overtimeAlerts.length} alert{overtimeAlerts.length !== 1 ? "s" : ""}</Tag>
+                  <Tag bg="var(--surface-warn)" col="var(--surface-warn-text)">{overtimeAlerts.length} alert{overtimeAlerts.length !== 1 ? "s" : ""}</Tag>
                 )}
               </div>
               <span style={{ fontSize: 13, color: "var(--text-muted)", userSelect: "none" }}>
@@ -905,12 +905,12 @@ export default function ReportsTab({
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>
               Scheduled vs Actual — {MONTHS[rMonth]} {rYear}
             </div>
-            <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
+            <div style={{ overflowX: "auto", borderRadius: 10, border: "1.5px solid var(--border)" }}>
               <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "var(--bg-muted)" }}>
                     {["Employee", "Rostered Days", "Rostered Hours", "Actual Hours", "Variance", "Utilisation %"].map(h => (
-                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid #e5e7eb" }}>
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1.5px solid var(--border)" }}>
                         {h}
                       </th>
                     ))}
@@ -925,7 +925,7 @@ export default function ReportsTab({
                     </tr>
                   )}
                   {empRows.map(({ emp, rosteredDays, rosteredH, actualH, variance, util }) => (
-                    <tr key={emp.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <tr key={emp.id} style={{ borderBottom: "1px solid var(--border-soft)" }}>
                       <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
                         <div>{emp.name}</div>
                         <div style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 400 }}>{emp.role}</div>
@@ -938,7 +938,7 @@ export default function ReportsTab({
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ color: util >= 100 ? "#dc2626" : util >= 80 ? "#d97706" : "var(--text-secondary)", fontWeight: 500 }}>{util}%</span>
+                          <span style={{ color: util >= 100 ? "var(--danger-text)" : util >= 80 ? "var(--surface-warn-text)" : "var(--text-secondary)", fontWeight: 500 }}>{util}%</span>
                           <div style={{ flex: 1, minWidth: 60 }}>
                             <ProgBar pct={util} />
                           </div>
@@ -949,7 +949,7 @@ export default function ReportsTab({
                 </tbody>
                 {employees.length > 0 && (
                   <tfoot>
-                    <tr style={{ background: "var(--bg-muted)", borderTop: "1.5px solid #e5e7eb" }}>
+                    <tr style={{ background: "var(--bg-muted)", borderTop: "1.5px solid var(--border)" }}>
                       <td style={{ padding: "10px 14px", fontWeight: 700, color: "var(--text-primary)" }}>Totals</td>
                       <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-primary)" }}>{totals.rosteredDays}d</td>
                       <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-primary)" }}>{fmtH(totals.rosteredH)}</td>
@@ -957,7 +957,7 @@ export default function ReportsTab({
                       <td style={{ padding: "10px 14px", fontWeight: 600, ...varianceCellStyle(totals.variance) }}>
                         {totals.variance >= 0 ? "+" : ""}{fmtH(totals.variance)}
                       </td>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, color: totalUtil >= 100 ? "#dc2626" : totalUtil >= 80 ? "#d97706" : "var(--text-secondary)" }}>
+                      <td style={{ padding: "10px 14px", fontWeight: 600, color: totalUtil >= 100 ? "var(--danger-text)" : totalUtil >= 80 ? "var(--surface-warn-text)" : "var(--text-secondary)" }}>
                         {totalUtil}%
                       </td>
                     </tr>
@@ -973,7 +973,7 @@ export default function ReportsTab({
               Project financial summary — {MONTHS[rMonth]} {rYear}
             </div>
             {projects.length === 0 && (
-              <div style={{ padding: "32px 24px", border: "2px dashed #e5e7eb", borderRadius: 12, textAlign: "center", color: "var(--text-faint)", fontSize: 13 }}>
+              <div style={{ padding: "32px 24px", border: "2px dashed var(--border)", borderRadius: 12, textAlign: "center", color: "var(--text-faint)", fontSize: 13 }}>
                 No projects to display.
               </div>
             )}
@@ -985,30 +985,30 @@ export default function ReportsTab({
                     {p.client && <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 8 }}>{p.client}</span>}
                   </div>
                   <Tag
-                    bg={pct >= 100 ? "#fee2e2" : pct >= 80 ? "#fef9c3" : "#dcfce7"}
-                    col={pct >= 100 ? "#dc2626" : pct >= 80 ? "#713f12" : "#166534"}
+                    bg={pct >= 100 ? "var(--danger-bg)" : pct >= 80 ? "var(--surface-warn)" : "var(--str-active-bg)"}
+                    col={pct >= 100 ? "var(--danger-text)" : pct >= 80 ? "var(--surface-warn-text)" : "var(--success-text)"}
                   >
                     {pct}% of target
                   </Tag>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 12 }}>
-                  <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
+                  <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--border)" }}>
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Rostered man-hours</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmtH(manH)}</div>
                     <div style={{ fontSize: 11, color: "var(--text-faint)" }}>of {fmtH(allocH)} target</div>
                   </div>
 
                   {labourCost > 0 && (
-                    <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
+                    <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--border)" }}>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Labour cost</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt$(labourCost)}</div>
-                      {budget && <div style={{ fontSize: 11, color: labourCost > budget ? "#dc2626" : "var(--text-faint)" }}>budget: {fmt$(budget)}</div>}
+                      {budget && <div style={{ fontSize: 11, color: labourCost > budget ? "var(--danger-text)" : "var(--text-faint)" }}>budget: {fmt$(budget)}</div>}
                     </div>
                   )}
 
                   {revenue !== null && (
-                    <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "10px 12px", border: "1px solid #bbf7d0" }}>
+                    <div style={{ background: "var(--success-bg)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--success-border)" }}>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Revenue</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt$(revenue)}</div>
                       <div style={{ fontSize: 11, color: "var(--text-faint)" }}>@ ${p.chargeOutRate}/hr</div>
@@ -1016,9 +1016,9 @@ export default function ReportsTab({
                   )}
 
                   {margin !== null && (
-                    <div style={{ background: margin >= 0 ? "#f0fdf4" : "#fef2f2", borderRadius: 8, padding: "10px 12px", border: `1px solid ${margin >= 0 ? "#bbf7d0" : "#fecaca"}` }}>
+                    <div style={{ background: margin >= 0 ? "var(--success-bg)" : "var(--danger-bg)", borderRadius: 8, padding: "10px 12px", border: `1px solid ${margin >= 0 ? "var(--success-border)" : "var(--danger-border)"}` }}>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Margin</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: margin >= 0 ? "#059669" : "#dc2626" }}>{fmt$(margin)}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: margin >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>{fmt$(margin)}</div>
                       {revenue && revenue > 0 && (
                         <div style={{ fontSize: 11, color: "var(--text-faint)" }}>
                           {Math.round((margin / revenue) * 100)}% of revenue
@@ -1028,7 +1028,7 @@ export default function ReportsTab({
                   )}
 
                   {budget && !labourCost && (
-                    <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid #e5e7eb" }}>
+                    <div style={{ background: "var(--bg-muted)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--border)" }}>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Monthly budget slice</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt$(budget)}</div>
                     </div>
@@ -1045,7 +1045,7 @@ export default function ReportsTab({
                   <div style={{ marginTop: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>
                       <span>Budget consumed</span>
-                      <span style={{ fontWeight: 500, color: labourCost > budget ? "#dc2626" : "var(--text-secondary)" }}>
+                      <span style={{ fontWeight: 500, color: labourCost > budget ? "var(--danger-text)" : "var(--text-secondary)" }}>
                         {fmt$(labourCost)} / {fmt$(budget)}
                       </span>
                     </div>

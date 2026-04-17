@@ -1,6 +1,4 @@
--- Migration: Add Settings & Configuration System
--- Created: 2024-04-16
--- Description: Adds settings table with RLS policies and holiday/calendar management
+-- Settings & configuration (org defaults, timezone, holidays, etc.)
 
 -- ── CREATE SETTINGS TABLE ──────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS settings (
@@ -31,15 +29,13 @@ ON CONFLICT (key) DO NOTHING;
 -- ── ENABLE RLS ─────────────────────────────────────────────────────────────
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
--- ── CREATE RLS POLICIES ────────────────────────────────────────────────────
--- All users can read settings
-CREATE POLICY IF NOT EXISTS "settings_read" ON settings 
-  FOR SELECT USING (true);
+-- ── RLS POLICIES ────────────────────────────────────────────────────────────
+-- (IF NOT EXISTS is not valid for CREATE POLICY on all Postgres versions)
+DROP POLICY IF EXISTS "settings_read" ON settings;
+CREATE POLICY "settings_read" ON settings FOR SELECT USING (true);
 
--- All users can update settings (tighten with app_users role check in future)
-CREATE POLICY IF NOT EXISTS "settings_update" ON settings 
-  FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "settings_update" ON settings;
+CREATE POLICY "settings_update" ON settings FOR UPDATE USING (true) WITH CHECK (true);
 
--- All users can insert settings (tighten with app_users role check in future)
-CREATE POLICY IF NOT EXISTS "settings_insert" ON settings 
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "settings_insert" ON settings;
+CREATE POLICY "settings_insert" ON settings FOR INSERT WITH CHECK (true);

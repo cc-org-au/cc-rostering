@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "import:xlsm": "node scripts/monthly-planning-xlsm-to-csv.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
@@ -20,6 +21,11 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "@tailwindcss/postcss": "^4.2.2",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^4.2.2",
+    "typescript": "5.9.3",
+    "xlsx": "^0.18.5"
   }
 }

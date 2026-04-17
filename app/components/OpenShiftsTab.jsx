@@ -8,7 +8,7 @@ import {
   BtnPri, Btn, BtnDanger, BtnSuccess, ToggleBtn,
   ConfirmModal,
   StatusBadge, SecTitle, Empty, Tag, StrBtn, Avatar, inits,
-  DAYS_SHORT, dlabel, uid,
+  DAYS_SHORT, dlabel,
 } from "./shared";
 
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 1 + i);
@@ -32,6 +32,52 @@ function dayLabel(dateStr) {
   const p = parseDate(dateStr);
   if (!p) return "";
   return dlabel(p.y, p.m, p.d);
+}
+
+function OpenShiftsSectionToggle({ section, setSection }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Open shifts or shift swaps"
+      style={{
+        display: "flex",
+        gap: 8,
+        marginBottom: 16,
+        flexWrap: "nowrap",
+        overflowX: "auto",
+        overflowY: "hidden",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      {[
+        ["open", "Open shifts"],
+        ["swaps", "Shift swaps"],
+      ].map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          role="tab"
+          aria-selected={section === key}
+          onClick={() => setSection(key)}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1.5px solid var(--border)",
+            background: section === key ? "var(--accent)" : "var(--bg-card)",
+            color: section === key ? "var(--on-accent)" : "var(--text-secondary)",
+            fontWeight: section === key ? 600 : 400,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 14,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function OpenShiftsTab({
@@ -120,35 +166,25 @@ export default function OpenShiftsTab({
         return;
       }
       setSaving(true);
-      const newShift = {
-        id: uid(),
+      const payload = {
         date,
         project_id: projectId,
         required_role: requiredRole,
         required_strengths: requiredStrengths,
-        claimed_by: null,
         status: "open",
-        notes,
+        notes: notes || "",
       };
-      // Optimistic update
-      setOpenShifts((prev) => [...prev, newShift]);
-      // Reset form
+      const { data, error } = await supabase.from("open_shifts").insert(payload).select().single();
+      setSaving(false);
+      if (error) {
+        showToast("Error posting shift: " + error.message);
+        return;
+      }
+      setOpenShifts((prev) => [...prev, data]);
+      showToast("Open shift posted.");
       setDate(defaultDate);
       setRequiredStrengths([]);
       setNotes("");
-
-      supabase
-        .from("open_shifts")
-        .insert(newShift)
-        .then(({ error }) => {
-          if (error) {
-            showToast("Error posting shift: " + error.message);
-            setOpenShifts((prev) => prev.filter((s) => s.id !== newShift.id));
-          } else {
-            showToast("Open shift posted.");
-          }
-        });
-      setSaving(false);
     }
 
     // Filter shifts to the selected rYear/rMonth
@@ -292,7 +328,7 @@ export default function OpenShiftsTab({
                   flexWrap: "wrap",
                   gap: 6,
                   padding: 10,
-                  border: "1.5px solid #e5e7eb",
+                  border: "1.5px solid var(--border)",
                   borderRadius: 8,
                   background: "var(--bg-surface)",
                 }}
@@ -447,7 +483,7 @@ export default function OpenShiftsTab({
                         }}
                       >
                         {shift.required_strengths.map((s) => (
-                          <Tag key={s} bg="#ecfdf5" col="#065f46">
+                          <Tag key={s} bg="var(--str-active-bg)" col="var(--str-active-text)">
                             {s}
                           </Tag>
                         ))}
@@ -544,7 +580,7 @@ export default function OpenShiftsTab({
                               alignItems: "center",
                               gap: 6,
                               padding: "6px 10px",
-                              border: "1.5px solid #e5e7eb",
+                              border: "1.5px solid var(--border)",
                               borderRadius: 8,
                               background: "var(--bg-muted)",
                             }}
@@ -644,30 +680,26 @@ export default function OpenShiftsTab({
         showToast("Please select a requester and shift date.");
         return;
       }
-      const newSwap = {
-        id: uid(),
+      if (!swapProjectId) {
+        showToast("Please select a project for this swap.");
+        return;
+      }
+      const payload = {
         requester_id: requesterId,
         acceptor_id: acceptorId || null,
         shift_date: shiftDate,
         project_id: swapProjectId,
         status: "pending",
-        notes: swapNotes,
-        created_at: new Date().toISOString(),
+        notes: swapNotes || "",
       };
-      setShiftSwaps((prev) => [...prev, newSwap]);
+      const { data, error } = await supabase.from("shift_swaps").insert(payload).select().single();
+      if (error) {
+        showToast("Error requesting swap: " + error.message);
+        return;
+      }
+      setShiftSwaps((prev) => [...prev, data]);
       setSwapNotes("");
-
-      supabase
-        .from("shift_swaps")
-        .insert(newSwap)
-        .then(({ error }) => {
-          if (error) {
-            showToast("Error requesting swap: " + error.message);
-            setShiftSwaps((prev) => prev.filter((s) => s.id !== newSwap.id));
-          } else {
-            showToast("Swap request submitted.");
-          }
-        });
+      showToast("Swap request submitted.");
     }
 
     function updateSwapStatus(swap, status) {
@@ -974,9 +1006,9 @@ export default function OpenShiftsTab({
                       <div
                         style={{
                           fontSize: 12,
-                          color: "#059669",
-                          background: "#f0fdf4",
-                          border: "1px solid #bbf7d0",
+                          color: "var(--success-text)",
+                          background: "var(--success-bg)",
+                          border: "1px solid var(--success-border)",
                           borderRadius: 6,
                           padding: "6px 10px",
                           marginTop: 4,
@@ -1068,7 +1100,7 @@ export default function OpenShiftsTab({
         </div>
       </div>
 
-      <SectionToggle />
+      <OpenShiftsSectionToggle section={section} setSection={setSection} />
 
       {section === "open" && <OpenShiftsSection />}
       {section === "swaps" && <ShiftSwapsSection />}

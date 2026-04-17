@@ -58,5 +58,7 @@ function mapProjectBody(b) {
     monthly_hours: b.monthly_hours ?? b.monthlyHours ?? {},
     strengths_required: b.strengths_required ?? b.strengthsRequired ?? [],
     is_completed: b.is_completed ?? b.isCompleted ?? false,
+    work_days: b.work_days ?? b.workDays ?? undefined,
+    overtime_note: b.overtime_note ?? b.overtimeNote ?? "",
   };
 }
